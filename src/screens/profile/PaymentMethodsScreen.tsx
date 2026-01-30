@@ -1,7 +1,7 @@
-import { Button } from "@/components/common/Button";
-import { Input } from "@/components/common/Input";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Button } from "@/src/components/common/Button";
+import { Input } from "@/src/components/common/Input";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useState } from "react";
