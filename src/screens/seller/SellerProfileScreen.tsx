@@ -1,15 +1,18 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
     Dimensions,
     Image,
+    Platform,
     ScrollView,
+    StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -68,7 +71,7 @@ export const SellerProfileScreen: React.FC = () => {
           style={styles.bannerImage}
         />
         <LinearGradient
-          colors={["rgba(0,0,0,0.6)", "transparent", "rgba(0,0,0,0.4)"]}
+          colors={["rgba(0,0,0,0.6)", "transparent", "rgba(0,0,0,0.8)"]}
           style={styles.bannerOverlay}
         />
         <View style={styles.headerRow}>
@@ -89,7 +92,7 @@ export const SellerProfileScreen: React.FC = () => {
       {/* Seller Info Card */}
       <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
         <View style={styles.infoTop}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.sellerName, { color: colors.text }]}>
               The Burger Loft
             </Text>
@@ -136,7 +139,9 @@ export const SellerProfileScreen: React.FC = () => {
       </View>
 
       {/* Menu Categories */}
-      <View style={styles.tabsContainer}>
+      <View
+        style={[styles.tabsContainer, { backgroundColor: colors.background }]}
+      >
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -148,7 +153,10 @@ export const SellerProfileScreen: React.FC = () => {
               onPress={() => setActiveTab(tab)}
               style={[
                 styles.tabBtn,
-                activeTab === tab && { borderBottomColor: colors.primary },
+                activeTab === tab && {
+                  borderBottomColor: colors.primary,
+                  borderBottomWidth: 3,
+                },
               ]}
             >
               <Text
@@ -215,7 +223,7 @@ export const SellerProfileScreen: React.FC = () => {
         ))}
       </ScrollView>
 
-      {/* Floating Cart Button (Optional) */}
+      {/* Floating Cart Button */}
       <TouchableOpacity
         style={[styles.floatingCart, { backgroundColor: colors.primary }]}
       >
@@ -229,7 +237,233 @@ export const SellerProfileScreen: React.FC = () => {
   );
 };
 
-// Helper for banner gradient
-const LinearGradient = ({ colors, style }: any) => {
-  return <View style={style} />; // Placeholder as I'll use expo-linear-gradient properly
-};
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  bannerContainer: {
+    height: 240,
+    width: "100%",
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
+  },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  headerRow: {
+    position: "absolute",
+    top: 50,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  circleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoCard: {
+    marginHorizontal: 16,
+    marginTop: -40,
+    borderRadius: 24,
+    padding: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  infoTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  sellerName: {
+    fontSize: 24,
+    fontWeight: "800",
+  },
+  sellerTags: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  ratingText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  divider: {
+    height: 1,
+    marginVertical: 16,
+    opacity: 0.5,
+  },
+  statsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  statText: {
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  statDivider: {
+    width: 1,
+    height: 20,
+    opacity: 0.3,
+  },
+  tabsContainer: {
+    marginTop: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+  },
+  tabsScroll: {
+    paddingHorizontal: 16,
+  },
+  tabBtn: {
+    paddingVertical: 16,
+    marginRight: 24,
+    paddingHorizontal: 4,
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  menuScroll: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 100,
+  },
+  categoryTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 16,
+  },
+  menuItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  itemInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  itemDesc: {
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 8,
+  },
+  itemPrice: {
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  calories: {
+    fontSize: 12,
+  },
+  itemImageContainer: {
+    position: "relative",
+  },
+  itemImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 16,
+  },
+  addBtn: {
+    position: "absolute",
+    bottom: -8,
+    right: -8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  floatingCart: {
+    position: "absolute",
+    bottom: 24,
+    left: 16,
+    right: 16,
+    height: 60,
+    borderRadius: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#ee2b8c",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.4,
+        shadowRadius: 15,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  cartCount: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartCountText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  viewCartText: {
+    flex: 1,
+    textAlign: "center",
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  cartTotal: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+});
