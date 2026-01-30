@@ -1,6 +1,6 @@
-import { Button } from "@/components/common/Button";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Button } from "@/src/components/common/Button";
 import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -9,7 +9,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");

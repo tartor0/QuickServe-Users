@@ -60,7 +60,7 @@ export const PaymentMethodsScreen: React.FC = () => {
                   <Text style={styles.cardLabel}>CARD HOLDER</Text>
                   <Text style={styles.cardValue}>JOHN DOE</Text>
                 </View>
-                <View style={{ alignItems: "end" }}>
+                <View style={{ alignItems: "flex-end" }}>
                   <Text style={styles.cardLabel}>EXPIRES</Text>
                   <Text style={styles.cardValue}>MM/YY</Text>
                 </View>
