@@ -166,7 +166,7 @@ export const HomeScreen: React.FC = () => {
             <TouchableOpacity
               key={seller.id}
               style={[styles.sellerCard, { backgroundColor: colors.surface }]}
-              onPress={() => router.push(`/seller/${seller.id}`)}
+              onPress={() => router.push(`/seller/${seller.id}` as any)}
             >
               <View style={styles.sellerImageContainer}>
                 <Image
