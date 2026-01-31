@@ -50,26 +50,52 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        {/* Auth Flow */}
+        <Stack.Screen name="auth/onboarding" />
         <Stack.Screen name="auth/login" />
         <Stack.Screen name="auth/signup" />
-        <Stack.Screen name="auth/onboarding" />
+
+        {/* Main App (Tabs) */}
+        <Stack.Screen name="(tabs)" />
+
+        {/* Profile Stack */}
         <Stack.Screen
           name="profile/payment-methods"
-          options={{ presentation: "modal", title: "Payment Methods" }}
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
         />
         <Stack.Screen
           name="profile/subscription"
-          options={{ presentation: "modal" }}
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
         />
         <Stack.Screen name="profile/referral" />
+        <Stack.Screen
+          name="profile/delete-account"
+          options={{ presentation: "card" }}
+        />
+
+        {/* Seller Stack */}
+        <Stack.Screen
+          name="seller/[id]"
+          options={{ presentation: "card", animation: "slide_from_right" }}
+        />
+
+        {/* Orders Stack */}
+        <Stack.Screen
+          name="orders/tracking"
+          options={{ presentation: "card" }}
+        />
+
+        {/* Rewards */}
         <Stack.Screen name="rewards/index" />
-        <Stack.Screen name="seller/[id]" />
+
+        {/* Search */}
         <Stack.Screen
           name="search/filters"
-          options={{ presentation: "modal" }}
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
         />
+
+        {/* Generic Modal */}
+        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </ThemeProvider>
