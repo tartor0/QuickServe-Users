@@ -12,22 +12,55 @@ import {
     View,
 } from "react-native";
 
+import { useRouter } from "expo-router";
+
 const MENU_ITEMS = [
-  { id: "1", title: "Edit Profile", icon: "person", color: "#3B82F6" },
-  { id: "2", title: "Saved Addresses", icon: "location-on", color: "#3B82F6" },
-  { id: "3", title: "Payment Methods", icon: "credit-card", color: "#3B82F6" },
-  { id: "4", title: "Order History", icon: "receipt-long", color: "#3B82F6" },
-  { id: "5", title: "Settings", icon: "settings", color: "#3B82F6" },
+  {
+    id: "1",
+    title: "Subscription",
+    icon: "stars",
+    color: "#3B82F6",
+    route: "/profile/subscription",
+  },
+  {
+    id: "2",
+    title: "Payment Methods",
+    icon: "credit-card",
+    color: "#3B82F6",
+    route: "/profile/payment-methods",
+  },
+  {
+    id: "3",
+    title: "Rewards",
+    icon: "card-giftcard",
+    color: "#3B82F6",
+    route: "/rewards/index",
+  },
+  {
+    id: "4",
+    title: "Refer a Friend",
+    icon: "people",
+    color: "#3B82F6",
+    route: "/profile/referral",
+  },
+  {
+    id: "5",
+    title: "Delete Account",
+    icon: "delete",
+    color: "#EF4444",
+    route: "/profile/delete-account",
+  },
 ];
 
 export const ProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
+  const router = useRouter();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Header */}
+        {/* ... (Header remains same) */}
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             My Profile
@@ -73,6 +106,7 @@ export const ProfileScreen: React.FC = () => {
                 key={item.id}
                 style={styles.menuItem}
                 activeOpacity={0.7}
+                onPress={() => item.route && router.push(item.route as any)}
               >
                 <View
                   style={[
@@ -88,7 +122,7 @@ export const ProfileScreen: React.FC = () => {
                   <MaterialIcons
                     name={item.icon as any}
                     size={22}
-                    color="#3B82F6"
+                    color={item.color}
                   />
                 </View>
                 <Text style={[styles.menuItemText, { color: colors.text }]}>

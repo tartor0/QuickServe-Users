@@ -1,7 +1,7 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -11,11 +11,11 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 
 import {
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
-    PlusJakartaSans_800ExtraBold,
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -52,6 +52,24 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        <Stack.Screen name="auth/login" />
+        <Stack.Screen name="auth/signup" />
+        <Stack.Screen name="auth/onboarding" />
+        <Stack.Screen
+          name="profile/payment-methods"
+          options={{ presentation: "modal", title: "Payment Methods" }}
+        />
+        <Stack.Screen
+          name="profile/subscription"
+          options={{ presentation: "modal" }}
+        />
+        <Stack.Screen name="profile/referral" />
+        <Stack.Screen name="rewards/index" />
+        <Stack.Screen name="seller/[id]" />
+        <Stack.Screen
+          name="search/filters"
+          options={{ presentation: "modal" }}
+        />
       </Stack>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </ThemeProvider>
