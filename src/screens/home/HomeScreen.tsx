@@ -1,5 +1,4 @@
 import { Colors } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -52,8 +51,10 @@ const SELLERS = [
   },
 ];
 
+import { useTheme } from "@/src/context/ThemeContext";
+
 export const HomeScreen: React.FC = () => {
-  const colorScheme = useColorScheme() ?? "light";
+  const { colorScheme, toggleColorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("food");
@@ -77,10 +78,24 @@ export const HomeScreen: React.FC = () => {
             />
           </View>
         </View>
-        <TouchableOpacity style={styles.notificationBtn}>
-          <MaterialIcons name="notifications" size={24} color={colors.text} />
-          <View style={styles.badge} />
-        </TouchableOpacity>
+
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={toggleColorScheme}
+            style={[styles.themeBtn, { backgroundColor: colors.surface }]}
+          >
+            <MaterialIcons
+              name={colorScheme === "dark" ? "light-mode" : "dark-mode"}
+              size={20}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.notificationBtn}>
+            <MaterialIcons name="notifications" size={24} color={colors.text} />
+            <View style={styles.badge} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Search Bar */}
@@ -271,6 +286,23 @@ const styles = StyleSheet.create({
   location: {
     fontSize: 18,
     fontWeight: "700",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  themeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   notificationBtn: {
     width: 40,

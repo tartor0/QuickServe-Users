@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/src/context/ThemeContext";
 import {
   DarkTheme,
   DefaultTheme,
@@ -9,7 +10,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
-import { ThemeProvider } from '@/src/context/ThemeContext';
 
 import {
   PlusJakartaSans_400Regular,
@@ -58,7 +58,9 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider
+      value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+    >
       <Stack screenOptions={{ headerShown: false }}>
         {/* Auth Flow */}
         <Stack.Screen name="auth/onboarding" />
@@ -108,6 +110,6 @@ function RootLayoutNav() {
         <Stack.Screen name="modal" options={{ presentation: "modal" }} />
       </Stack>
       <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-    </ThemeProvider>
+    </NavigationThemeProvider>
   );
 }
