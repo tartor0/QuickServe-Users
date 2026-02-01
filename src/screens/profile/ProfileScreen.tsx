@@ -17,13 +17,13 @@ const MENU_ITEMS = [
     id: "1",
     title: "Edit Profile",
     icon: "person",
-    route: null,
+    route: "/profile/edit",
   },
   {
     id: "2",
     title: "Saved Addresses",
     icon: "location-on",
-    route: null,
+    route: "/profile/addresses",
   },
   {
     id: "3",
@@ -59,7 +59,7 @@ const MENU_ITEMS = [
     id: "8",
     title: "Settings",
     icon: "settings",
-    route: null,
+    route: "/profile/settings",
   },
 ];
 
@@ -102,7 +102,10 @@ export const ProfileScreen: React.FC = () => {
               style={styles.avatar}
             />
             <TouchableOpacity
-              style={[styles.editAvatarBtn, { backgroundColor: "#f04299" }]}
+              style={[
+                styles.editAvatarBtn,
+                { backgroundColor: colors.primary },
+              ]}
             >
               <MaterialIcons name="edit" size={16} color="#fff" />
             </TouchableOpacity>
@@ -142,7 +145,7 @@ export const ProfileScreen: React.FC = () => {
                 <MaterialIcons
                   name={item.icon as any}
                   size={22}
-                  color="#3B82F6"
+                  color={colors.primary}
                 />
               </View>
               <Text style={[styles.menuTitle, { color: colors.text }]}>
@@ -161,12 +164,17 @@ export const ProfileScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.logoutBtn,
-            { backgroundColor: "rgba(240, 66, 153, 0.1)" },
+            {
+              backgroundColor: colors.error + "1A",
+              borderColor: colors.error + "33",
+            },
           ]}
           onPress={handleLogout}
         >
-          <MaterialIcons name="logout" size={20} color="#f04299" />
-          <Text style={[styles.logoutText, { color: "#f04299" }]}>Log Out</Text>
+          <MaterialIcons name="logout" size={20} color={colors.error} />
+          <Text style={[styles.logoutText, { color: colors.error }]}>
+            Log Out
+          </Text>
         </TouchableOpacity>
 
         {/* Delete Account Link */}
@@ -286,7 +294,6 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     gap: 8,
     borderWidth: 1,
-    borderColor: "rgba(240, 66, 153, 0.2)",
   },
   logoutText: {
     fontSize: 16,

@@ -3,13 +3,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const CATEGORIES = [
@@ -79,23 +79,10 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            onPress={toggleColorScheme}
-            style={[styles.themeBtn, { backgroundColor: colors.surface }]}
-          >
-            <MaterialIcons
-              name={colorScheme === "dark" ? "light-mode" : "dark-mode"}
-              size={20}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.notificationBtn}>
-            <MaterialIcons name="notifications" size={24} color={colors.text} />
-            <View style={styles.badge} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.notificationBtn}>
+          <MaterialIcons name="notifications" size={24} color={colors.text} />
+          <View style={[styles.badge, { backgroundColor: colors.accent }]} />
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -287,23 +274,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  themeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
+
   notificationBtn: {
     width: 40,
     height: 40,
@@ -319,7 +290,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#ec4899",
   },
   searchContainer: {
     paddingHorizontal: 16,

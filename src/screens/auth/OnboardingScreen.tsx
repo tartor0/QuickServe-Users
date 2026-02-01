@@ -5,12 +5,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Dimensions,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -63,8 +63,8 @@ export const OnboardingScreen: React.FC = () => {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Logo Header */}
       <View style={styles.header}>
-        <MaterialIcons name="rocket-launch" size={32} color="#135bec" />
-        <Text style={styles.logo}>QuickServe</Text>
+        <MaterialIcons name="rocket-launch" size={32} color={colors.primary} />
+        <Text style={[styles.logo, { color: colors.primary }]}>QuickServe</Text>
       </View>
 
       {/* Main Content */}
@@ -72,7 +72,7 @@ export const OnboardingScreen: React.FC = () => {
         {/* Decorative Blob */}
         <View style={styles.blobContainer}>
           <LinearGradient
-            colors={["rgba(236, 72, 153, 0.1)", "transparent"]}
+            colors={[colors.primary + "1A", "transparent"]}
             style={styles.blob}
           />
         </View>
@@ -91,7 +91,7 @@ export const OnboardingScreen: React.FC = () => {
           <Text style={[styles.title, { color: colors.text }]}>
             {currentSlide.title.split("\n")[0]}
             {"\n"}
-            <Text style={{ color: "#135bec" }}>
+            <Text style={{ color: colors.primary }}>
               {currentSlide.title.split("\n")[1]}
             </Text>
           </Text>
@@ -110,7 +110,9 @@ export const OnboardingScreen: React.FC = () => {
               key={index}
               style={[
                 styles.dot,
-                index === currentIndex ? styles.activeDot : styles.inactiveDot,
+                index === currentIndex
+                  ? [styles.activeDot, { backgroundColor: colors.accent }]
+                  : styles.inactiveDot,
               ]}
             />
           ))}
@@ -118,7 +120,10 @@ export const OnboardingScreen: React.FC = () => {
 
         {/* CTA Button */}
         <TouchableOpacity
-          style={styles.button}
+          style={[
+            styles.button,
+            { backgroundColor: colors.primary, shadowColor: colors.primary },
+          ]}
           onPress={handleNext}
           activeOpacity={0.8}
         >
@@ -136,7 +141,9 @@ export const OnboardingScreen: React.FC = () => {
             Already have an account?{" "}
           </Text>
           <TouchableOpacity onPress={handleSkip}>
-            <Text style={styles.loginLink}>Log in</Text>
+            <Text style={[styles.loginLink, { color: colors.primary }]}>
+              Log in
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -159,7 +166,6 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#135bec",
   },
   content: {
     flex: 1,
@@ -222,21 +228,18 @@ const styles = StyleSheet.create({
   },
   activeDot: {
     width: 32,
-    backgroundColor: "#ec4899",
   },
   inactiveDot: {
     width: 10,
     backgroundColor: "#d1d5db",
   },
   button: {
-    backgroundColor: "#135bec",
     height: 56,
     borderRadius: 28,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    shadowColor: "#135bec",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -259,6 +262,5 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#ec4899",
   },
 });
