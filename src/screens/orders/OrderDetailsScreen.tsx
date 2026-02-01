@@ -135,6 +135,8 @@ export const OrderDetailsScreen: React.FC = () => {
               color={colors.textSecondary}
             />
           </TouchableOpacity>
+
+          
         </View>
 
         {/* Delivery Info */}

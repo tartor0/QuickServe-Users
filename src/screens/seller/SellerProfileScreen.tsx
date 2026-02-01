@@ -242,7 +242,13 @@ export const SellerProfileScreen: React.FC = () => {
                 style={styles.menuItemImage}
               />
               <TouchableOpacity
-                style={[styles.addBtn, { backgroundColor: colors.primary }]}
+                style={[
+                  styles.addBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    shadowColor: colors.primary,
+                  },
+                ]}
                 onPress={() => addToCart(item.id)}
               >
                 <MaterialIcons name="add" size={24} color="#fff" />
@@ -258,7 +264,10 @@ export const SellerProfileScreen: React.FC = () => {
       {cartCount > 0 && (
         <View style={styles.floatingCartContainer}>
           <TouchableOpacity
-            style={[styles.floatingCart, { backgroundColor: colors.primary }]}
+            style={[
+              styles.floatingCart,
+              { backgroundColor: colors.primary, shadowColor: colors.primary },
+            ]}
             activeOpacity={0.9}
           >
             <View style={styles.cartLeft}>
@@ -299,7 +308,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 120,
-    backgroundColor: "linear-gradient(to bottom, rgba(0,0,0,0.4), transparent)",
+    backgroundColor: "rgba(0,0,0,0.4)", // Replaced invalid gradient string
   },
   topNav: {
     position: "absolute",
@@ -454,7 +463,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -472,7 +480,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderRadius: 32,
-    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
