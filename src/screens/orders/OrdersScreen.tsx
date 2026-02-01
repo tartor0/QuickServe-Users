@@ -44,6 +44,17 @@ const ORDERS = [
   },
 ];
 
+const ACTIVE_ORDERS = [
+  {
+    id: "2492",
+    seller: "Burger King • Central Park",
+    status: "Arriving",
+    statusColor: "#3b82f6",
+    eta: "4 mins",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200",
+  },
+];
+
 export const OrdersScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
@@ -53,12 +64,16 @@ export const OrdersScreen: React.FC = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <MaterialIcons name="arrow-back-ios" size={20} color={colors.text} />
+          <MaterialIcons
+            name="arrow-back-ios-new"
+            size={20}
+            color={colors.text}
+          />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
-          Past Orders
+          My Orders
         </Text>
         <TouchableOpacity style={styles.filterBtn}>
           <MaterialIcons name="tune" size={24} color={colors.text} />
@@ -96,13 +111,6 @@ export const OrdersScreen: React.FC = () => {
             >
               {filter}
             </Text>
-            {filter !== "All" && (
-              <MaterialIcons
-                name="expand-more"
-                size={16}
-                color={selectedFilter === filter ? "#fff" : colors.text}
-              />
-            )}
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -113,10 +121,83 @@ export const OrdersScreen: React.FC = () => {
         contentContainerStyle={styles.ordersContent}
         showsVerticalScrollIndicator={false}
       >
-        {ORDERS.map((order) => (
-          <View
+        {/* Active Orders Section */}
+        {ACTIVE_ORDERS.length > 0 && selectedFilter === "All" && (
+          <>
+            <Text style={[styles.sectionTitleText, { color: colors.text }]}>
+              Active Orders
+            </Text>
+            {ACTIVE_ORDERS.map((order) => (
+              <TouchableOpacity
+                key={order.id}
+                style={[
+                  styles.orderCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.primary,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => router.push(`/orders/tracking` as any)}
+              >
+                <View style={styles.orderHeader}>
+                  <View style={styles.orderInfo}>
+                    <View style={styles.statusRow}>
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: order.statusColor },
+                        ]}
+                      >
+                        {order.status.toUpperCase()}
+                      </Text>
+                      <View style={styles.dot} />
+                      <Text
+                        style={[styles.dateText, { color: colors.primary }]}
+                      >
+                        ETA: {order.eta}
+                      </Text>
+                    </View>
+                    <Text style={[styles.sellerName, { color: colors.text }]}>
+                      {order.seller}
+                    </Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.trackBtnInline,
+                        { backgroundColor: colors.primary },
+                      ]}
+                      onPress={() => router.push(`/orders/tracking` as any)}
+                    >
+                      <MaterialIcons
+                        name="location-on"
+                        size={16}
+                        color="#fff"
+                      />
+                      <Text style={styles.trackBtnTextInline}>Track Order</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Image
+                    source={{ uri: order.image }}
+                    style={styles.orderImage}
+                  />
+                </View>
+              </TouchableOpacity>
+            ))}
+            <View style={{ height: 16 }} />
+          </>
+        )}
+
+        <Text style={[styles.sectionTitleText, { color: colors.text }]}>
+          Past Orders
+        </Text>
+
+        {ORDERS.filter(
+          (o) => selectedFilter === "All" || o.status === selectedFilter,
+        ).map((order) => (
+          <TouchableOpacity
             key={order.id}
             style={[styles.orderCard, { backgroundColor: colors.surface }]}
+            onPress={() => router.push(`/orders/${order.id}` as any)}
           >
             <View style={styles.orderHeader}>
               <View style={styles.orderInfo}>
@@ -147,8 +228,12 @@ export const OrdersScreen: React.FC = () => {
             <View
               style={[styles.orderFooter, { borderTopColor: colors.border }]}
             >
-              <TouchableOpacity>
-                <Text style={[styles.viewDetailsText, { color: "#3b82f6" }]}>
+              <TouchableOpacity
+                onPress={() => router.push(`/orders/${order.id}` as any)}
+              >
+                <Text
+                  style={[styles.viewDetailsText, { color: colors.primary }]}
+                >
                   View Details
                 </Text>
               </TouchableOpacity>
@@ -159,7 +244,7 @@ export const OrdersScreen: React.FC = () => {
                 <Text style={styles.reorderText}>Reorder</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
 
         {/* Empty State */}
@@ -320,6 +405,29 @@ const styles = StyleSheet.create({
   reorderText: {
     color: "#fff",
     fontSize: 14,
+    fontWeight: "700",
+  },
+  sectionTitleText: {
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginTop: 8,
+    marginBottom: 8,
+    textTransform: "uppercase",
+  },
+  trackBtnInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginTop: 4,
+  },
+  trackBtnTextInline: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "700",
   },
   emptyState: {

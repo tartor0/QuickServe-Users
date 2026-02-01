@@ -1,7 +1,7 @@
 import { Colors } from "@/constants/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React from "react";
 import {
     Image,
     ScrollView,
@@ -57,7 +57,6 @@ export const HomeScreen: React.FC = () => {
   const { colorScheme, toggleColorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState("food");
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -117,30 +116,29 @@ export const HomeScreen: React.FC = () => {
               key={category.id}
               style={[
                 styles.categoryChip,
-                selectedCategory === category.id && {
-                  backgroundColor: colors.primary,
-                },
-                selectedCategory !== category.id && {
+                {
                   backgroundColor: colors.surface,
                   borderColor: colors.border,
                   borderWidth: 1,
                 },
               ]}
-              onPress={() => setSelectedCategory(category.id)}
+              onPress={() =>
+                router.push({
+                  pathname: `/category/${category.id}`,
+                  params: { name: category.label },
+                } as any)
+              }
             >
               <MaterialIcons
                 name={category.icon as any}
                 size={18}
-                color={
-                  selectedCategory === category.id ? "#fff" : colors.primary
-                }
+                color={colors.primary}
               />
               <Text
                 style={[
                   styles.categoryText,
                   {
-                    color:
-                      selectedCategory === category.id ? "#fff" : colors.text,
+                    color: colors.text,
                   },
                 ]}
               >

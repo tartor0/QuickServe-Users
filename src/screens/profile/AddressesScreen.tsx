@@ -119,11 +119,26 @@ export const AddressesScreen: React.FC = () => {
                 </Text>
               </View>
 
-              <MaterialIcons
-                name="edit"
-                size={20}
-                color={colors.textSecondary}
-              />
+              <View style={styles.actionColumn}>
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: "/profile/addresses/edit",
+                      params: { id: item.id },
+                    } as any)
+                  }
+                  style={styles.actionBtn}
+                >
+                  <MaterialIcons name="edit" size={20} color={colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionBtn}>
+                  <MaterialIcons
+                    name="delete-outline"
+                    size={20}
+                    color={colors.error}
+                  />
+                </TouchableOpacity>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
@@ -255,5 +270,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
+  },
+  actionColumn: {
+    gap: 12,
+    marginLeft: 12,
+  },
+  actionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.02)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
