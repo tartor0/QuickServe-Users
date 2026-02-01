@@ -419,7 +419,10 @@ export const CartScreen: React.FC = () => {
           ]}
         >
           <TouchableOpacity
-            style={[styles.checkoutBtn, { backgroundColor: colors.primary }]}
+            style={[
+              styles.checkoutBtn,
+              { backgroundColor: colors.primary, shadowColor: colors.primary },
+            ]}
             onPress={() => router.push("/checkout" as any)}
           >
             <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
@@ -678,7 +681,6 @@ const styles = StyleSheet.create({
     height: 56,
     paddingHorizontal: 24,
     borderRadius: 28,
-    shadowColor: "#ec4899",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

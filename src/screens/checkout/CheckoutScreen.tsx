@@ -332,7 +332,10 @@ export const CheckoutScreen: React.FC = () => {
         ]}
       >
         <TouchableOpacity
-          style={[styles.placeOrderBtn, { backgroundColor: colors.primary }]}
+          style={[
+            styles.placeOrderBtn,
+            { backgroundColor: colors.primary, shadowColor: colors.primary },
+          ]}
           onPress={handlePlaceOrder}
         >
           <Text style={styles.placeOrderBtnText}>Place Order</Text>
@@ -545,7 +548,6 @@ const styles = StyleSheet.create({
     height: 56,
     paddingHorizontal: 24,
     borderRadius: 28,
-    shadowColor: "#ec4899",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
