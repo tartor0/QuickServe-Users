@@ -51,10 +51,26 @@ const SELLERS = [
   },
 ];
 
-import { useTheme } from "@/src/context/ThemeContext";
+const RECENTLY_ORDERED = [
+  {
+    id: "1",
+    name: "Burger King",
+    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
+  },
+  {
+    id: "2",
+    name: "Health First Pharmacy",
+    image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=400",
+  },
+  {
+    id: "3",
+    name: "Organic Harvest",
+    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400",
+  },
+];
 
 export const HomeScreen: React.FC = () => {
-  const { colorScheme, toggleColorScheme } = useTheme();
+  const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
 
@@ -78,7 +94,10 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.notificationBtn}>
+        <TouchableOpacity
+          style={styles.notificationBtn}
+          onPress={() => router.push("/profile/notifications" as any)}
+        >
           <MaterialIcons name="notifications" size={24} color={colors.text} />
           <View style={[styles.badge, { backgroundColor: colors.accent }]} />
         </TouchableOpacity>
@@ -93,7 +112,7 @@ export const HomeScreen: React.FC = () => {
             placeholder="Search for a location or vendor..."
             placeholderTextColor={colors.textSecondary}
           />
-          <TouchableOpacity onPress={() => router.push("/search/filters")}>
+          <TouchableOpacity onPress={() => router.push("/search/results")}>
             <MaterialIcons name="tune" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -143,6 +162,35 @@ export const HomeScreen: React.FC = () => {
                 ]}
               >
                 {category.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Recently Ordered */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Recently Ordered
+          </Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.recentContainer}
+          contentContainerStyle={styles.recentContent}
+        >
+          {RECENTLY_ORDERED.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={[styles.recentCard, { backgroundColor: colors.surface }]}
+              onPress={() => router.push(`/seller/${item.id}` as any)}
+            >
+              <Image source={{ uri: item.image }} style={styles.recentImage} />
+              <Text
+                style={[styles.recentName, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {item.name}
               </Text>
             </TouchableOpacity>
           ))}
@@ -452,5 +500,28 @@ const styles = StyleSheet.create({
   },
   metaDot: {
     fontSize: 14,
+  },
+  recentContainer: {
+    marginBottom: 24,
+  },
+  recentContent: {
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  recentCard: {
+    width: 100,
+    alignItems: "center",
+    gap: 8,
+  },
+  recentImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#e5e7eb",
+  },
+  recentName: {
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });

@@ -20,6 +20,12 @@ const MENU_ITEMS = [
     route: "/profile/edit",
   },
   {
+    id: "favorites",
+    title: "My Favorites",
+    icon: "favorite-outline",
+    route: "/profile/favorites",
+  },
+  {
     id: "2",
     title: "Saved Addresses",
     icon: "location-on",
@@ -44,16 +50,28 @@ const MENU_ITEMS = [
     route: "/profile/subscription",
   },
   {
-    id: "6",
-    title: "Rewards",
+    id: "rewards",
+    title: "Rewards & Points",
     icon: "card-giftcard",
     route: "/rewards/index",
+  },
+  {
+    id: "6",
+    title: "Offers & Promos",
+    icon: "local-offer",
+    route: "/profile/promotions",
   },
   {
     id: "7",
     title: "Refer a Friend",
     icon: "people",
     route: "/profile/referral",
+  },
+  {
+    id: "support",
+    title: "Support & FAQ",
+    icon: "help-outline",
+    route: "/support",
   },
   {
     id: "8",
@@ -102,6 +120,7 @@ export const ProfileScreen: React.FC = () => {
               style={styles.avatar}
             />
             <TouchableOpacity
+              onPress={() => router.push("/profile/edit" as any)}
               style={[
                 styles.editAvatarBtn,
                 { backgroundColor: colors.primary },
@@ -117,6 +136,37 @@ export const ProfileScreen: React.FC = () => {
           <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
             alex.j@example.com
           </Text>
+        </View>
+
+        {/* Statistics Section */}
+        <View style={styles.statsContainer}>
+          <View style={[styles.statItem, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.statValue, { color: colors.text }]}>42</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Orders
+            </Text>
+          </View>
+          <View style={[styles.statItem, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
+              2.5k
+            </Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Points
+            </Text>
+          </View>
+          <View style={[styles.statItem, { backgroundColor: colors.surface }]}>
+            <View style={styles.tierBadge}>
+              <MaterialIcons name="verified" size={14} color="#fbbf24" />
+              <Text
+                style={[styles.statValue, { color: "#fbbf24", fontSize: 16 }]}
+              >
+                GOLD
+              </Text>
+            </View>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Tier
+            </Text>
+          </View>
         </View>
 
         {/* Menu Items */}
@@ -307,5 +357,37 @@ const styles = StyleSheet.create({
   deleteAccountText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 24,
+    gap: 12,
+    marginBottom: 24,
+  },
+  statItem: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "800",
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  tierBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
 });
