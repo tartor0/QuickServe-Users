@@ -1,7 +1,7 @@
 import {
   DarkTheme,
   DefaultTheme,
-  ThemeProvider,
+  ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -9,6 +9,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import { ThemeProvider } from '@/src/context/ThemeContext';
 
 import {
   PlusJakartaSans_400Regular,
@@ -24,7 +25,6 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [loaded, error] = useFonts({
     "PlusJakartaSans-Regular": PlusJakartaSans_400Regular,
     "PlusJakartaSans-Medium": PlusJakartaSans_500Medium,
@@ -48,7 +48,17 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider>
+      <RootLayoutNav />
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutNav() {
+  const colorScheme = useColorScheme();
+
+  return (
+    <NavigationThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
         {/* Auth Flow */}
         <Stack.Screen name="auth/onboarding" />
