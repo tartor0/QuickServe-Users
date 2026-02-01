@@ -88,10 +88,10 @@ export const RewardsScreen: React.FC = () => {
         {/* Points Card */}
         <View style={styles.pointsCardContainer}>
           <LinearGradient
-            colors={["#ec4899", "#8b5cf6"]}
+            colors={["#3b82f6", "#2563eb"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.pointsCard}
+            style={[styles.pointsCard, { shadowColor: colors.primary }]}
           >
             <View style={styles.pointsCardContent}>
               <View style={styles.pointsLeft}>
@@ -126,10 +126,14 @@ export const RewardsScreen: React.FC = () => {
               <View
                 style={[
                   styles.earnIcon,
-                  { backgroundColor: "rgba(236, 72, 153, 0.1)" },
+                  { backgroundColor: colors.primary + "1A" },
                 ]}
               >
-                <MaterialIcons name="shopping-bag" size={24} color="#ec4899" />
+                <MaterialIcons
+                  name="shopping-bag"
+                  size={24}
+                  color={colors.primary}
+                />
               </View>
               <Text style={[styles.earnPoints, { color: colors.text }]}>
                 +50
@@ -383,7 +387,6 @@ const styles = StyleSheet.create({
   pointsCard: {
     borderRadius: 24,
     padding: 24,
-    shadowColor: "#ec4899",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

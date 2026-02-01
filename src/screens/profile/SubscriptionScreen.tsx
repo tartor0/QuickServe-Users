@@ -5,11 +5,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const BENEFITS = [
@@ -78,7 +78,7 @@ export const SubscriptionScreen: React.FC = () => {
         {/* Hero Card */}
         <View style={styles.heroContainer}>
           <LinearGradient
-            colors={["#FFD700", "#1e3a8a"]}
+            colors={["#facc15", "#1d4ed8"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroGradient}
@@ -114,7 +114,7 @@ export const SubscriptionScreen: React.FC = () => {
                   <MaterialIcons
                     name={benefit.icon as any}
                     size={30}
-                    color="#f04299"
+                    color={colors.primary}
                   />
                 </View>
                 <Text style={[styles.benefitTitle, { color: colors.text }]}>
@@ -167,7 +167,9 @@ export const SubscriptionScreen: React.FC = () => {
               >
                 Free
               </Text>
-              <Text style={[styles.tableHeaderTextPlus, { color: "#f04299" }]}>
+              <Text
+                style={[styles.tableHeaderTextPlus, { color: colors.primary }]}
+              >
                 Plus
               </Text>
             </View>
@@ -212,13 +214,15 @@ export const SubscriptionScreen: React.FC = () => {
                       <MaterialIcons
                         name="check-circle"
                         size={20}
-                        color="#f04299"
+                        color={colors.primary}
                       />
                     ) : (
                       <MaterialIcons name="close" size={20} color="#d1d5db" />
                     )
                   ) : (
-                    <Text style={[styles.cellTextPlus, { color: "#f04299" }]}>
+                    <Text
+                      style={[styles.cellTextPlus, { color: colors.primary }]}
+                    >
                       {item.plus}
                     </Text>
                   )}
@@ -249,11 +253,16 @@ export const SubscriptionScreen: React.FC = () => {
             </Text>
           </View>
           <View style={styles.cancelContainer}>
-            <Text style={styles.cancelText}>CANCEL ANYTIME</Text>
+            <Text style={[styles.cancelText, { color: colors.primary }]}>
+              CANCEL ANYTIME
+            </Text>
           </View>
         </View>
         <TouchableOpacity
-          style={[styles.joinBtn, { backgroundColor: "#f04299" }]}
+          style={[
+            styles.joinBtn,
+            { backgroundColor: colors.primary, shadowColor: colors.primary },
+          ]}
         >
           <Text style={styles.joinBtnText}>Join Now</Text>
         </TouchableOpacity>
@@ -462,7 +471,6 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#f04299",
     letterSpacing: 1.5,
   },
   joinBtn: {
@@ -470,7 +478,6 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#f04299",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

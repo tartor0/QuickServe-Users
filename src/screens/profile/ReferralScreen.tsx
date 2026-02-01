@@ -5,13 +5,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Clipboard,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Clipboard,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const REFERRAL_CODE = "ALEX2024";
@@ -90,10 +90,10 @@ export const ReferralScreen: React.FC = () => {
         {/* Hero Card */}
         <View style={styles.heroContainer}>
           <LinearGradient
-            colors={["#ec4899", "#8b5cf6"]}
+            colors={["#3b82f6", "#2563eb"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.heroCard}
+            style={[styles.heroCard, { shadowColor: colors.primary }]}
           >
             <View style={styles.heroIcon}>
               <MaterialIcons name="card-giftcard" size={48} color="#fff" />
@@ -165,19 +165,24 @@ export const ReferralScreen: React.FC = () => {
           <View style={styles.benefitsContainer}>
             {BENEFITS.map((benefit, index) => (
               <View key={benefit.id} style={styles.benefitRow}>
-                <View style={styles.benefitNumber}>
+                <View
+                  style={[
+                    styles.benefitNumber,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
                   <Text style={styles.benefitNumberText}>{index + 1}</Text>
                 </View>
                 <View
                   style={[
                     styles.benefitIconContainer,
-                    { backgroundColor: "rgba(236, 72, 153, 0.1)" },
+                    { backgroundColor: colors.primary + "1A" },
                   ]}
                 >
                   <MaterialIcons
                     name={benefit.icon as any}
                     size={24}
-                    color="#ec4899"
+                    color={colors.primary}
                   />
                 </View>
                 <View style={styles.benefitContent}>
@@ -201,7 +206,10 @@ export const ReferralScreen: React.FC = () => {
         {/* Share Button */}
         <View style={styles.shareContainer}>
           <TouchableOpacity
-            style={[styles.shareBtn, { backgroundColor: colors.primary }]}
+            style={[
+              styles.shareBtn,
+              { backgroundColor: colors.primary, shadowColor: colors.primary },
+            ]}
             onPress={handleShare}
           >
             <MaterialIcons name="share" size={20} color="#fff" />
@@ -261,7 +269,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 32,
     alignItems: "center",
-    shadowColor: "#ec4899",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -373,7 +380,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#ec4899",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -412,7 +418,6 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     gap: 10,
-    shadowColor: "#ec4899",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
