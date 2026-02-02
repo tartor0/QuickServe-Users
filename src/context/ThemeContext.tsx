@@ -15,7 +15,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const systemColorScheme = useSystemColorScheme() as ThemeMode;
-  const [mode, setMode] = useState<ThemeMode>(systemColorScheme || "light");
+  const [mode, setMode] = useState<ThemeMode>("light");
 
   const toggleColorScheme = () => {
     setMode((prev) => (prev === "light" ? "dark" : "light"));

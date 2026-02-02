@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { EmptyState } from "@/src/components/common/EmptyState";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -36,6 +37,8 @@ export const FavoritesScreen: React.FC = () => {
   const colors = Colors[colorScheme];
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"sellers" | "items">("sellers");
+  const [sellers, setSellers] = useState(FAVORITES);
+  const [items, setItems] = useState([]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -77,7 +80,7 @@ export const FavoritesScreen: React.FC = () => {
               },
             ]}
           >
-            Sellers
+            Sellers ({sellers.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -99,7 +102,7 @@ export const FavoritesScreen: React.FC = () => {
               },
             ]}
           >
-            Items
+            Items ({items.length})
           </Text>
         </TouchableOpacity>
       </View>
@@ -109,76 +112,84 @@ export const FavoritesScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {activeTab === "sellers" ? (
-          <View style={styles.listContainer}>
-            {FAVORITES.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={[
-                  styles.favoriteCard,
-                  { backgroundColor: colors.surface },
-                ]}
-                activeOpacity={0.8}
-                onPress={() => router.push(`/seller/${item.id}` as any)}
-              >
-                <Image source={{ uri: item.image }} style={styles.cardImage} />
-                <View style={styles.cardInfo}>
-                  <View style={styles.nameRow}>
-                    <Text style={[styles.name, { color: colors.text }]}>
-                      {item.name}
+          sellers.length === 0 ? (
+            <EmptyState
+              icon="favorite-border"
+              title="No favorite sellers yet"
+              subtitle="Save your favorite restaurants and stores to find them quickly here."
+              buttonText="Explore Sellers"
+              onButtonPress={() => router.push("/(tabs)" as any)}
+            />
+          ) : (
+            <View style={styles.listContainer}>
+              {sellers.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.favoriteCard,
+                    { backgroundColor: colors.surface },
+                  ]}
+                  activeOpacity={0.8}
+                  onPress={() => router.push(`/seller/${item.id}` as any)}
+                >
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.cardImage}
+                  />
+                  <View style={styles.cardInfo}>
+                    <View style={styles.nameRow}>
+                      <Text style={[styles.name, { color: colors.text }]}>
+                        {item.name}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          setSellers((prev) =>
+                            prev.filter((s) => s.id !== item.id),
+                          )
+                        }
+                      >
+                        <MaterialIcons
+                          name="favorite"
+                          size={20}
+                          color="#ef4444"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                    <Text
+                      style={[styles.category, { color: colors.textSecondary }]}
+                    >
+                      {item.category}
                     </Text>
-                    <TouchableOpacity>
-                      <MaterialIcons
-                        name="favorite"
-                        size={20}
-                        color="#ef4444"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  <Text
-                    style={[styles.category, { color: colors.textSecondary }]}
-                  >
-                    {item.category}
-                  </Text>
-                  <View style={styles.metaRow}>
-                    <View style={styles.ratingBox}>
-                      <MaterialIcons name="star" size={14} color="#fbbf24" />
-                      <Text style={[styles.rating, { color: colors.text }]}>
-                        {item.rating}
+                    <View style={styles.metaRow}>
+                      <View style={styles.ratingBox}>
+                        <MaterialIcons name="star" size={14} color="#fbbf24" />
+                        <Text style={[styles.rating, { color: colors.text }]}>
+                          {item.rating}
+                        </Text>
+                      </View>
+                      <View style={styles.metaDot} />
+                      <Text
+                        style={[
+                          styles.metaText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {item.time}
                       </Text>
                     </View>
-                    <View style={styles.metaDot} />
-                    <Text
-                      style={[styles.metaText, { color: colors.textSecondary }]}
-                    >
-                      {item.time}
-                    </Text>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )
         ) : (
-          <View style={styles.emptyContainer}>
-            <MaterialIcons
-              name="favorite-border"
-              size={64}
-              color={colors.textSecondary}
-            />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No favorite items yet
-            </Text>
-            <Text
-              style={[styles.emptySubtitle, { color: colors.textSecondary }]}
-            >
-              Save your favorite dishes to find them quickly here.
-            </Text>
-            <TouchableOpacity
-              style={[styles.browseBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/(tabs)/" as any)}
-            >
-              <Text style={styles.browseText}>Browse Menu</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="restaurant-menu"
+            title="No favorite items yet"
+            subtitle="Explore our menus and save your favorite dishes to this list!"
+            buttonText="Browse Menus"
+            onButtonPress={() => router.push("/(tabs)" as any)}
+          />
         )}
 
         <View style={{ height: 40 }} />

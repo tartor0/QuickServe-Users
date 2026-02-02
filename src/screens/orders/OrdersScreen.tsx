@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { EmptyState } from "@/src/components/common/EmptyState";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -249,19 +250,13 @@ export const OrdersScreen: React.FC = () => {
 
         {/* Empty State */}
         {ORDERS.length === 0 && (
-          <View style={styles.emptyState}>
-            <MaterialIcons
-              name="receipt-long"
-              size={64}
-              color={colors.textSecondary}
-            />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No orders yet
-            </Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              Start ordering from your favorite restaurants
-            </Text>
-          </View>
+          <EmptyState
+            icon="receipt-long"
+            title="No orders yet"
+            subtitle="Start ordering from your favorite restaurants to see your history here."
+            buttonText="Find Food"
+            onButtonPress={() => router.push("/(tabs)" as any)}
+          />
         )}
       </ScrollView>
     </View>

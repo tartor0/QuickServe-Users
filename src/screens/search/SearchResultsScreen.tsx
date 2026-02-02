@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { EmptyState } from "@/src/components/common/EmptyState";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -13,7 +14,18 @@ import {
     View,
 } from "react-native";
 
-const SEARCH_RESULTS = [
+interface Seller {
+  id: string;
+  name: string;
+  category: string;
+  rating: number;
+  distance: string;
+  deliveryTime: string;
+  image: string;
+  discount?: string;
+}
+
+const SEARCH_RESULTS: Seller[] = [
   {
     id: "1",
     name: "Gourmet Burgers",
@@ -52,6 +64,11 @@ export const SearchResultsScreen: React.FC = () => {
 
   const [query, setQuery] = useState((initialQuery as string) || "");
   const [activeFilters, setActiveFilters] = useState(["Distance", "Rating"]);
+
+  const filteredResults = SEARCH_RESULTS.filter((seller) => {
+    if (!query) return true;
+    return seller.name.toLowerCase().includes(query.toLowerCase());
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -155,92 +172,108 @@ export const SearchResultsScreen: React.FC = () => {
             Results for "{query || "Burgers"}"
           </Text>
           <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-            {SEARCH_RESULTS.length} vendors found
+            {filteredResults.length} vendors found
           </Text>
         </View>
 
-        <View style={styles.sellersList}>
-          {SEARCH_RESULTS.map((seller) => (
-            <TouchableOpacity
-              key={seller.id}
-              style={[styles.sellerCard, { backgroundColor: colors.surface }]}
-              onPress={() => router.push(`/seller/${seller.id}` as any)}
-            >
-              <Image
-                source={{ uri: seller.image }}
-                style={styles.sellerImage}
-              />
-              <View style={styles.sellerInfo}>
-                <View style={styles.sellerTop}>
-                  <Text style={[styles.sellerName, { color: colors.text }]}>
-                    {seller.name}
-                  </Text>
-                  <View style={styles.ratingBadge}>
-                    <Text
-                      style={[styles.ratingText, { color: colors.primary }]}
-                    >
-                      {seller.rating}
+        {filteredResults.length === 0 ? (
+          <EmptyState
+            icon="search-off"
+            title="No results found"
+            subtitle={`We couldn't find any vendors matching "${query}". Try searching for something else!`}
+            buttonText="Clear Search"
+            onButtonPress={() => setQuery("")}
+          />
+        ) : (
+          <View style={styles.sellersList}>
+            {filteredResults.map((seller) => (
+              <TouchableOpacity
+                key={seller.id}
+                style={[styles.sellerCard, { backgroundColor: colors.surface }]}
+                onPress={() => router.push(`/seller/${seller.id}` as any)}
+              >
+                <Image
+                  source={{ uri: seller.image }}
+                  style={styles.sellerImage}
+                />
+                <View style={styles.sellerInfo}>
+                  <View style={styles.sellerTop}>
+                    <Text style={[styles.sellerName, { color: colors.text }]}>
+                      {seller.name}
                     </Text>
-                    <MaterialIcons
-                      name="star"
-                      size={12}
-                      color={colors.primary}
-                    />
-                  </View>
-                </View>
-                <Text
-                  style={[
-                    styles.sellerCategory,
-                    { color: colors.textSecondary },
-                  ]}
-                >
-                  {seller.category}
-                </Text>
-                <View style={styles.sellerMeta}>
-                  <View style={styles.metaItem}>
-                    <MaterialIcons
-                      name="location-on"
-                      size={14}
-                      color={colors.textSecondary}
-                    />
-                    <Text
-                      style={[styles.metaText, { color: colors.textSecondary }]}
-                    >
-                      {seller.distance}
-                    </Text>
+                    <View style={styles.ratingBadge}>
+                      <Text
+                        style={[styles.ratingText, { color: colors.primary }]}
+                      >
+                        {seller.rating}
+                      </Text>
+                      <MaterialIcons
+                        name="star"
+                        size={12}
+                        color={colors.primary}
+                      />
+                    </View>
                   </View>
                   <Text
-                    style={[styles.metaDot, { color: colors.textSecondary }]}
+                    style={[
+                      styles.sellerCategory,
+                      { color: colors.textSecondary },
+                    ]}
                   >
-                    •
+                    {seller.category}
                   </Text>
-                  <View style={styles.metaItem}>
-                    <MaterialIcons
-                      name="schedule"
-                      size={14}
-                      color={colors.textSecondary}
-                    />
+                  <View style={styles.sellerMeta}>
+                    <View style={styles.metaItem}>
+                      <MaterialIcons
+                        name="location-on"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.metaText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {seller.distance}
+                      </Text>
+                    </View>
                     <Text
-                      style={[styles.metaText, { color: colors.textSecondary }]}
+                      style={[styles.metaDot, { color: colors.textSecondary }]}
                     >
-                      {seller.deliveryTime}
+                      •
                     </Text>
+                    <View style={styles.metaItem}>
+                      <MaterialIcons
+                        name="schedule"
+                        size={14}
+                        color={colors.textSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.metaText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {seller.deliveryTime}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-              {seller.discount && (
-                <View
-                  style={[
-                    styles.discountBadge,
-                    { backgroundColor: colors.accent },
-                  ]}
-                >
-                  <Text style={styles.discountText}>{seller.discount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
+                {seller.discount && (
+                  <View
+                    style={[
+                      styles.discountBadge,
+                      { backgroundColor: colors.accent },
+                    ]}
+                  >
+                    <Text style={styles.discountText}>{seller.discount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
 
         <View style={{ height: 40 }} />
       </ScrollView>

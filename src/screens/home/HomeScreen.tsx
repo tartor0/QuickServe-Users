@@ -1,9 +1,11 @@
 import { Colors } from "@/constants/theme";
+import { Skeleton } from "@/src/components/common/Skeleton";
 import { useTheme } from "@/src/context/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+    Dimensions,
     Image,
     ScrollView,
     StyleSheet,
@@ -12,6 +14,25 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const BANNERS = [
+  {
+    id: "b1",
+    title: "50% OFF",
+    subtitle: "On your first 3 orders",
+    color: "#3b82f6",
+    image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+  },
+  {
+    id: "b2",
+    title: "Free Delivery",
+    subtitle: "QuickServe Plus member",
+    color: "#ee2b8c",
+    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800",
+  },
+];
 
 const CATEGORIES = [
   { id: "food", label: "Food", icon: "restaurant" },
@@ -74,6 +95,58 @@ export const HomeScreen: React.FC = () => {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate initial data fetch
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const renderSkeleton = () => (
+    <View style={styles.skeletonContainer}>
+      <View style={styles.skeletonBanners}>
+        <Skeleton width={SCREEN_WIDTH - 32} height={160} borderRadius={24} />
+      </View>
+      <View style={styles.skeletonCategories}>
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} width={100} height={40} borderRadius={20} />
+        ))}
+      </View>
+      <View style={styles.skeletonSection}>
+        <Skeleton
+          width={150}
+          height={24}
+          borderRadius={4}
+          style={{ marginBottom: 16 }}
+        />
+        <View style={{ flexDirection: "row", gap: 16 }}>
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} width={80} height={80} borderRadius={40} />
+          ))}
+        </View>
+      </View>
+      <View style={styles.skeletonSection}>
+        <Skeleton
+          width={200}
+          height={24}
+          borderRadius={4}
+          style={{ marginBottom: 16 }}
+        />
+        {[1, 2].map((i) => (
+          <Skeleton
+            key={i}
+            width="100%"
+            height={200}
+            borderRadius={16}
+            style={{ marginBottom: 16 }}
+          />
+        ))}
+      </View>
+    </View>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -113,7 +186,9 @@ export const HomeScreen: React.FC = () => {
             placeholder="Search for a location or vendor..."
             placeholderTextColor={colors.textSecondary}
           />
-          <TouchableOpacity onPress={() => router.push("/search/results")}>
+          <TouchableOpacity
+            onPress={() => router.push("/search/results" as any)}
+          >
             <MaterialIcons name="tune" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -124,169 +199,231 @@ export const HomeScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContent}
-        >
-          {CATEGORIES.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[
-                styles.categoryChip,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                },
-              ]}
-              onPress={() =>
-                router.push({
-                  pathname: `/category/${category.id}`,
-                  params: { name: category.label },
-                } as any)
-              }
+        {isLoading ? (
+          renderSkeleton()
+        ) : (
+          <>
+            {/* Promo Banners */}
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.bannersContainer}
+              contentContainerStyle={styles.bannersContent}
             >
-              <MaterialIcons
-                name={category.icon as any}
-                size={18}
-                color={colors.primary}
-              />
-              <Text
-                style={[
-                  styles.categoryText,
-                  {
-                    color: colors.text,
-                  },
-                ]}
-              >
-                {category.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Recently Ordered */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Recently Ordered
-          </Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.recentContainer}
-          contentContainerStyle={styles.recentContent}
-        >
-          {RECENTLY_ORDERED.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.recentCard, { backgroundColor: colors.surface }]}
-              onPress={() => router.push(`/seller/${item.id}` as any)}
-            >
-              <Image source={{ uri: item.image }} style={styles.recentImage} />
-              <Text
-                style={[styles.recentName, { color: colors.text }]}
-                numberOfLines={1}
-              >
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Nearby Favorites
-          </Text>
-          <TouchableOpacity>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>
-              See all
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Sellers List */}
-        <View style={styles.sellersList}>
-          {SELLERS.map((seller) => (
-            <TouchableOpacity
-              key={seller.id}
-              style={[styles.sellerCard, { backgroundColor: colors.surface }]}
-              onPress={() => router.push(`/seller/${seller.id}` as any)}
-            >
-              <View style={styles.sellerImageContainer}>
-                <Image
-                  source={{ uri: seller.image }}
-                  style={styles.sellerImage}
-                />
-                {seller.discount && (
-                  <View style={styles.discountBadge}>
-                    <MaterialIcons name="local-offer" size={12} color="#fff" />
-                    <Text style={styles.discountText}>{seller.discount}</Text>
-                  </View>
-                )}
-                <TouchableOpacity style={styles.favoriteBtn}>
-                  <MaterialIcons
-                    name="favorite-border"
-                    size={18}
-                    color="#fff"
+              {BANNERS.map((banner) => (
+                <TouchableOpacity
+                  key={banner.id}
+                  style={[styles.bannerCard, { backgroundColor: banner.color }]}
+                  activeOpacity={0.9}
+                >
+                  <Image
+                    source={{ uri: banner.image }}
+                    style={styles.bannerImage}
                   />
+                  <View style={styles.bannerOverlay}>
+                    <Text style={styles.bannerTitle}>{banner.title}</Text>
+                    <Text style={styles.bannerSubtitle}>{banner.subtitle}</Text>
+                    <View style={styles.bannerBtn}>
+                      <Text style={styles.bannerBtnText}>Claim Now</Text>
+                    </View>
+                  </View>
                 </TouchableOpacity>
-                <View style={styles.deliveryTimeBadge}>
-                  <Text style={styles.deliveryTimeText}>
-                    {seller.deliveryTime}
-                  </Text>
-                </View>
-              </View>
+              ))}
+            </ScrollView>
 
-              <View style={styles.sellerInfo}>
-                <View style={styles.sellerHeader}>
-                  <Text style={[styles.sellerName, { color: colors.text }]}>
-                    {seller.name}
+            {/* Categories */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesContainer}
+              contentContainerStyle={styles.categoriesContent}
+            >
+              {CATEGORIES.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryChip,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  onPress={() =>
+                    router.push({
+                      pathname: `/category/${category.id}`,
+                      params: { name: category.label },
+                    } as any)
+                  }
+                >
+                  <MaterialIcons
+                    name={category.icon as any}
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      {
+                        color: colors.text,
+                      },
+                    ]}
+                  >
+                    {category.label}
                   </Text>
-                  <View style={styles.ratingContainer}>
-                    <Text style={[styles.rating, { color: colors.primary }]}>
-                      {seller.rating}
-                    </Text>
-                    <MaterialIcons
-                      name="star"
-                      size={12}
-                      color={colors.primary}
-                    />
-                  </View>
-                </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-                <View style={styles.sellerMeta}>
-                  <View style={styles.metaItem}>
-                    <MaterialIcons
-                      name="location-on"
-                      size={14}
-                      color={colors.textSecondary}
+            {/* Recently Ordered */}
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Recently Ordered
+              </Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.recentContainer}
+              contentContainerStyle={styles.recentContent}
+            >
+              {RECENTLY_ORDERED.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.recentCard,
+                    { backgroundColor: colors.surface },
+                  ]}
+                  onPress={() => router.push(`/seller/${item.id}` as any)}
+                >
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.recentImage}
+                  />
+                  <Text
+                    style={[styles.recentName, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Nearby Favorites Section */}
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Nearby Favorites
+              </Text>
+              <TouchableOpacity>
+                <Text style={[styles.seeAll, { color: colors.primary }]}>
+                  See all
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Sellers List */}
+            <View style={styles.sellersList}>
+              {SELLERS.map((seller) => (
+                <TouchableOpacity
+                  key={seller.id}
+                  style={[
+                    styles.sellerCard,
+                    { backgroundColor: colors.surface },
+                  ]}
+                  onPress={() => router.push(`/seller/${seller.id}` as any)}
+                  activeOpacity={0.9}
+                >
+                  <View style={styles.sellerImageContainer}>
+                    <Image
+                      source={{ uri: seller.image }}
+                      style={styles.sellerImage}
                     />
-                    <Text
-                      style={[styles.metaText, { color: colors.textSecondary }]}
-                    >
-                      {seller.distance}
-                    </Text>
+                    {seller.discount && (
+                      <View style={styles.discountBadge}>
+                        <MaterialIcons
+                          name="local-offer"
+                          size={12}
+                          color="#fff"
+                        />
+                        <Text style={styles.discountText}>
+                          {seller.discount}
+                        </Text>
+                      </View>
+                    )}
+                    <TouchableOpacity style={styles.favoriteBtn}>
+                      <MaterialIcons
+                        name="favorite-border"
+                        size={18}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
+                    <View style={styles.deliveryTimeBadge}>
+                      <Text style={styles.deliveryTimeText}>
+                        {seller.deliveryTime}
+                      </Text>
+                    </View>
                   </View>
-                  <Text
-                    style={[styles.metaDot, { color: colors.textSecondary }]}
-                  >
-                    •
-                  </Text>
-                  <Text
-                    style={[styles.metaText, { color: colors.textSecondary }]}
-                  >
-                    {seller.category}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
+
+                  <View style={styles.sellerInfo}>
+                    <View style={styles.sellerHeader}>
+                      <Text style={[styles.sellerName, { color: colors.text }]}>
+                        {seller.name}
+                      </Text>
+                      <View style={styles.ratingContainer}>
+                        <Text
+                          style={[styles.rating, { color: colors.primary }]}
+                        >
+                          {seller.rating}
+                        </Text>
+                        <MaterialIcons
+                          name="star"
+                          size={12}
+                          color={colors.primary}
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.sellerMeta}>
+                      <View style={styles.metaItem}>
+                        <MaterialIcons
+                          name="location-on"
+                          size={14}
+                          color={colors.textSecondary}
+                        />
+                        <Text
+                          style={[
+                            styles.metaText,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {seller.distance}
+                        </Text>
+                      </View>
+                      <Text
+                        style={[
+                          styles.metaDot,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        •
+                      </Text>
+                      <Text
+                        style={[
+                          styles.metaText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        {seller.category}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -524,5 +661,71 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
+  },
+  bannersContainer: {
+    marginBottom: 24,
+  },
+  bannersContent: {
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  bannerCard: {
+    width: SCREEN_WIDTH - 32,
+    height: 160,
+    borderRadius: 24,
+    overflow: "hidden",
+    position: "relative",
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
+    opacity: 0.6,
+  },
+  bannerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 24,
+    justifyContent: "center",
+  },
+  bannerTitle: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "800",
+  },
+  bannerSubtitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    opacity: 0.9,
+    marginBottom: 16,
+  },
+  bannerBtn: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+  },
+  bannerBtnText: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  skeletonContainer: {
+    paddingHorizontal: 16,
+  },
+  skeletonBanners: {
+    marginBottom: 24,
+  },
+  skeletonCategories: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  skeletonSection: {
+    marginBottom: 32,
   },
 });

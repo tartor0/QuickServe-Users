@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { EmptyState } from "@/src/components/common/EmptyState";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -110,33 +111,13 @@ export const CartScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {items.length === 0 ? (
-          /* Empty Cart State */
-          <View style={styles.emptyState}>
-            <View
-              style={[
-                styles.emptyIcon,
-                { backgroundColor: "rgba(59, 130, 246, 0.1)" },
-              ]}
-            >
-              <MaterialIcons
-                name="shopping-cart"
-                size={64}
-                color={colors.textSecondary}
-              />
-            </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              Your cart is empty
-            </Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              Add items from a restaurant to get started
-            </Text>
-            <TouchableOpacity
-              style={[styles.browseBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.push("/(tabs)/")}
-            >
-              <Text style={styles.browseBtnText}>Browse Restaurants</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="shopping-bag"
+            title="Your cart is empty"
+            subtitle="Looks like you haven't added anything to your cart yet. Find something delicious!"
+            buttonText="Browse Restaurants"
+            onButtonPress={() => router.push("/(tabs)" as any)}
+          />
         ) : (
           <>
             {/* Cart Items */}
