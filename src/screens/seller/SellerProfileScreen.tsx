@@ -4,13 +4,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -269,6 +269,7 @@ export const SellerProfileScreen: React.FC = () => {
               { backgroundColor: colors.primary, shadowColor: colors.primary },
             ]}
             activeOpacity={0.9}
+            onPress={() => router.push("/cart" as any)}
           >
             <View style={styles.cartLeft}>
               <View style={styles.cartBadge}>

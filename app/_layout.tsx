@@ -1,8 +1,8 @@
 import { ThemeProvider } from "@/src/context/ThemeContext";
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider as NavigationThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -12,11 +12,11 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 
 import {
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-  PlusJakartaSans_800ExtraBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
 } from "@expo-google-fonts/plus-jakarta-sans";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
@@ -103,6 +103,12 @@ function RootLayoutNav() {
         {/* Search */}
         <Stack.Screen
           name="search/filters"
+          options={{ presentation: "modal", animation: "slide_from_bottom" }}
+        />
+
+        {/* Cart */}
+        <Stack.Screen
+          name="cart"
           options={{ presentation: "modal", animation: "slide_from_bottom" }}
         />
 
