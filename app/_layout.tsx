@@ -94,8 +94,7 @@ function RootLayoutNav() {
 
     const inAuthGroup =
       segments[0] === "auth" ||
-      segments[0] === undefined ||
-      segments.length === 0;
+      segments[0] === undefined;
 
     if (isAuthenticated && inAuthGroup) {
       // Logged in but on an auth screen → go to the app

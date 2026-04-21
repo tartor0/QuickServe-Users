@@ -2,9 +2,11 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Button } from "@/src/components/common/Button";
 import { Input } from "@/src/components/common/Input";
+import { loginThunk, clearError } from "@/src/store/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -20,14 +22,34 @@ export const LoginScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { loading, error } = useAppSelector((state) => state.auth);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
-  const handleLogin = () => {
-    // TODO: Implement actual login logic
-    router.replace("/(tabs)");
+  // Clear stale auth errors when screen mounts
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  const handleLogin = async () => {
+    setValidationError("");
+
+    if (!email.trim() || !email.includes("@"))
+      return setValidationError("Please enter a valid email address.");
+    if (!password)
+      return setValidationError("Please enter your password.");
+
+    const result = await dispatch(
+      loginThunk({ email: email.trim(), password })
+    );
+
+    if (loginThunk.fulfilled.match(result)) {
+      // _layout.tsx auth listener handles the redirect automatically
+    }
   };
 
   return (
@@ -107,16 +129,27 @@ export const LoginScreen: React.FC = () => {
               }
             />
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => router.push("/auth/forgot-password" as any)}
+            >
               <Text style={[styles.forgotText, { color: colors.primary }]}>
                 Forgot Password?
               </Text>
             </TouchableOpacity>
 
+            {(validationError || error) ? (
+              <Text style={styles.errorText}>
+                {validationError || error}
+              </Text>
+            ) : null}
+
             <Button
               title="Log In"
               onPress={handleLogin}
               size="lg"
+              loading={loading}
+              disabled={loading}
               style={styles.loginBtn}
             />
           </View>
@@ -220,6 +253,13 @@ const styles = StyleSheet.create({
   forgotText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  errorText: {
+    fontSize: 13,
+    color: "#ef4444",
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 4,
   },
   loginBtn: {
     marginTop: 16,

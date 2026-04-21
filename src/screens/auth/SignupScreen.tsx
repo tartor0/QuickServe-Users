@@ -195,12 +195,20 @@ export const SignupScreen: React.FC = () => {
               </Text>
             </TouchableOpacity>
 
+            {/* Error messages — validation errors first, then API errors */}
+            {(validationError || error) ? (
+              <Text style={styles.errorText}>
+                {validationError || error}
+              </Text>
+            ) : null}
+
             <Button
               title="Sign Up"
               onPress={handleSignup}
               size="lg"
               style={styles.signupBtn}
-              disabled={!agreeToTerms}
+              loading={loading}
+              disabled={loading}
             />
           </View>
 
@@ -274,7 +282,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   signupBtn: {
-    marginTop: 16,
+    marginTop: 8,
+  },
+  errorText: {
+    fontSize: 13,
+    color: "#ef4444",
+    textAlign: "center",
+    marginTop: 4,
+    marginBottom: 4,
   },
   footer: {
     flexDirection: "row",
