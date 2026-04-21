@@ -1,0 +1,8 @@
+[functions.create-order]
+verify_jwt = true
+
+[functions.validate-promo]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true

@@ -1,11 +1,13 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { EmptyState } from "@/src/components/common/EmptyState";
+import { supabase } from "@/src/services/supabase";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     Image,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -13,32 +15,55 @@ import {
     View,
 } from "react-native";
 
-const FAVORITES = [
-  {
-    id: "1",
-    name: "Gourmet Burgers",
-    category: "American • Fast Food",
-    rating: 4.5,
-    time: "25-35 min",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-  },
-  {
-    id: "3",
-    name: "Organic Harvest",
-    category: "Grocery • Organic",
-    rating: 4.2,
-    time: "30-45 min",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400",
-  },
-];
+interface FavoriteSeller {
+  id: string;         // favorites row id
+  sellerId: string;
+  name: string;
+  category: string;
+  rating: number;
+  minDeliveryTime: number;
+  maxDeliveryTime: number;
+  imageUrl: string;
+}
 
 export const FavoritesScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"sellers" | "items">("sellers");
-  const [sellers, setSellers] = useState(FAVORITES);
-  const [items, setItems] = useState([]);
+  const [sellers, setSellers] = useState<FavoriteSeller[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadFavorites = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("user_favorites")
+        .select("id, seller_id, sellers (id, name, category, rating, min_delivery_time, max_delivery_time, image_url)")
+        .eq("user_id", user.id);
+      setSellers((data ?? []).map((row: any) => ({
+        id: row.id,
+        sellerId: row.seller_id,
+        name: row.sellers?.name ?? "",
+        category: row.sellers?.category ?? "",
+        rating: row.sellers?.rating ?? 0,
+        minDeliveryTime: row.sellers?.min_delivery_time ?? 20,
+        maxDeliveryTime: row.sellers?.max_delivery_time ?? 40,
+        imageUrl: row.sellers?.image_url ?? "",
+      })));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadFavorites(); }, [loadFavorites]);
+
+  const handleUnfavorite = async (favoriteId: string) => {
+    setSellers((prev) => prev.filter((s) => s.id !== favoriteId));
+    await supabase.from("user_favorites").delete().eq("id", favoriteId);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -80,7 +105,7 @@ export const FavoritesScreen: React.FC = () => {
               },
             ]}
           >
-            Sellers ({sellers.length})
+          Sellers ({sellers.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -102,7 +127,7 @@ export const FavoritesScreen: React.FC = () => {
               },
             ]}
           >
-            Items ({items.length})
+          Items (0)
           </Text>
         </TouchableOpacity>
       </View>
@@ -110,6 +135,7 @@ export const FavoritesScreen: React.FC = () => {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadFavorites} />}
       >
         {activeTab === "sellers" ? (
           sellers.length === 0 ? (
@@ -125,56 +151,27 @@ export const FavoritesScreen: React.FC = () => {
               {sellers.map((item) => (
                 <TouchableOpacity
                   key={item.id}
-                  style={[
-                    styles.favoriteCard,
-                    { backgroundColor: colors.surface },
-                  ]}
+                  style={[styles.favoriteCard, { backgroundColor: colors.surface }]}
                   activeOpacity={0.8}
-                  onPress={() => router.push(`/seller/${item.id}` as any)}
+                  onPress={() => router.push(`/seller/${item.sellerId}` as any)}
                 >
-                  <Image
-                    source={{ uri: item.image }}
-                    style={styles.cardImage}
-                  />
+                  <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />
                   <View style={styles.cardInfo}>
                     <View style={styles.nameRow}>
-                      <Text style={[styles.name, { color: colors.text }]}>
-                        {item.name}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() =>
-                          setSellers((prev) =>
-                            prev.filter((s) => s.id !== item.id),
-                          )
-                        }
-                      >
-                        <MaterialIcons
-                          name="favorite"
-                          size={20}
-                          color="#ef4444"
-                        />
+                      <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+                      <TouchableOpacity onPress={() => handleUnfavorite(item.id)}>
+                        <MaterialIcons name="favorite" size={20} color="#ef4444" />
                       </TouchableOpacity>
                     </View>
-                    <Text
-                      style={[styles.category, { color: colors.textSecondary }]}
-                    >
-                      {item.category}
-                    </Text>
+                    <Text style={[styles.category, { color: colors.textSecondary }]}>{item.category}</Text>
                     <View style={styles.metaRow}>
                       <View style={styles.ratingBox}>
                         <MaterialIcons name="star" size={14} color="#fbbf24" />
-                        <Text style={[styles.rating, { color: colors.text }]}>
-                          {item.rating}
-                        </Text>
+                        <Text style={[styles.rating, { color: colors.text }]}>{item.rating.toFixed(1)}</Text>
                       </View>
                       <View style={styles.metaDot} />
-                      <Text
-                        style={[
-                          styles.metaText,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {item.time}
+                      <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                        {item.minDeliveryTime}–{item.maxDeliveryTime} min
                       </Text>
                     </View>
                   </View>

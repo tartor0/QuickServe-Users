@@ -1,9 +1,12 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { profileService } from "@/src/services/api/profile";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -24,7 +27,7 @@ export const EditAddressScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const isEditing = !!id;
 
   const [type, setType] = useState("Home");
@@ -33,10 +36,52 @@ export const EditAddressScreen: React.FC = () => {
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
   const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    // Save logic here
-    router.back();
+  // Load existing address when editing
+  useEffect(() => {
+    if (!id) return;
+    profileService.getAddresses().then((addresses) => {
+      const addr = addresses.find((a: any) => a.id === id);
+      if (addr) {
+        setType(addr.label ?? "Home");
+        setStreet(addr.street ?? "");
+        setCity(addr.city ?? "");
+        setZip(addr.zip ?? "");
+        setNotes(addr.delivery_instructions ?? "");
+      }
+    });
+  }, [id]);
+
+  const handleSave = async () => {
+    if (!street.trim()) {
+      Alert.alert("Validation", "Street address is required.");
+      return;
+    }
+    if (!city.trim()) {
+      Alert.alert("Validation", "City is required.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        label: type,
+        street: apt ? `${street.trim()}, ${apt.trim()}` : street.trim(),
+        city: city.trim(),
+        zip: zip.trim(),
+        deliveryInstructions: notes.trim(),
+      };
+      if (isEditing) {
+        await profileService.updateAddress(id, payload);
+      } else {
+        await profileService.addAddress(payload);
+      }
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? "Failed to save address.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -247,10 +292,14 @@ export const EditAddressScreen: React.FC = () => {
 
       <View style={[styles.footer, { backgroundColor: colors.surface }]}>
         <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+          style={[styles.saveBtn, { backgroundColor: saving ? colors.primary + "99" : colors.primary }]}
           onPress={handleSave}
+          disabled={saving}
         >
-          <Text style={styles.saveText}>Save Address</Text>
+          {saving
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.saveText}>{isEditing ? "Update Address" : "Save Address"}</Text>
+          }
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

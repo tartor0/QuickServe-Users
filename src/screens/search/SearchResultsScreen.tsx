@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { EmptyState } from "@/src/components/common/EmptyState";
+import { sellersService, Seller } from "@/src/services/api/sellers";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -14,61 +16,36 @@ import {
     View,
 } from "react-native";
 
-interface Seller {
-  id: string;
-  name: string;
-  category: string;
-  rating: number;
-  distance: string;
-  deliveryTime: string;
-  image: string;
-  discount?: string;
-}
-
-const SEARCH_RESULTS: Seller[] = [
-  {
-    id: "1",
-    name: "Gourmet Burgers",
-    category: "American • Fast Food",
-    rating: 4.5,
-    distance: "1.2 km",
-    deliveryTime: "25-35 min",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-    discount: "20% OFF",
-  },
-  {
-    id: "4",
-    name: "Burger Haven",
-    category: "Burgers • Grill",
-    rating: 4.3,
-    distance: "1.8 km",
-    deliveryTime: "20-30 min",
-    image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=400",
-  },
-  {
-    id: "5",
-    name: "Classic Burger Co.",
-    category: "Burgers • American",
-    rating: 4.7,
-    distance: "2.5 km",
-    deliveryTime: "30-40 min",
-    image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400",
-  },
-];
-
 export const SearchResultsScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const { query: initialQuery } = useLocalSearchParams();
+  const { query: initialQuery } = useLocalSearchParams<{ query: string }>();
 
-  const [query, setQuery] = useState((initialQuery as string) || "");
+  const [query, setQuery] = useState(initialQuery ?? "");
+  const [results, setResults] = useState<Seller[]>([]);
+  const [loading, setLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState(["Distance", "Rating"]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filteredResults = SEARCH_RESULTS.filter((seller) => {
-    if (!query) return true;
-    return seller.name.toLowerCase().includes(query.toLowerCase());
-  });
+  const runSearch = useCallback(async (q: string) => {
+    if (!q.trim()) { setResults([]); return; }
+    setLoading(true);
+    try {
+      const data = await sellersService.search(q.trim());
+      setResults(data);
+    } catch { setResults([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => runSearch(query), 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, runSearch]);
+
+  // Run immediately on mount if query was passed in
+  useEffect(() => { if (initialQuery) runSearch(initialQuery); }, []); // eslint-disable-line
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -169,105 +146,60 @@ export const SearchResultsScreen: React.FC = () => {
       >
         <View style={styles.resultsHeader}>
           <Text style={[styles.resultsTitle, { color: colors.text }]}>
-            Results for "{query || "Burgers"}"
+            Results for "{query || "all"}"
           </Text>
           <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>
-            {filteredResults.length} vendors found
+            {loading ? "Searching…" : `${results.length} vendor${results.length !== 1 ? "s" : ""} found`}
           </Text>
         </View>
 
-        {filteredResults.length === 0 ? (
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 48 }} />
+        ) : results.length === 0 ? (
           <EmptyState
             icon="search-off"
             title="No results found"
-            subtitle={`We couldn't find any vendors matching "${query}". Try searching for something else!`}
+            subtitle={`No vendors match "${query}". Try a different term.`}
             buttonText="Clear Search"
             onButtonPress={() => setQuery("")}
           />
         ) : (
           <View style={styles.sellersList}>
-            {filteredResults.map((seller) => (
+            {results.map((seller) => (
               <TouchableOpacity
                 key={seller.id}
                 style={[styles.sellerCard, { backgroundColor: colors.surface }]}
                 onPress={() => router.push(`/seller/${seller.id}` as any)}
               >
-                <Image
-                  source={{ uri: seller.image }}
-                  style={styles.sellerImage}
-                />
+                <Image source={{ uri: seller.imageUrl }} style={styles.sellerImage} />
                 <View style={styles.sellerInfo}>
                   <View style={styles.sellerTop}>
-                    <Text style={[styles.sellerName, { color: colors.text }]}>
-                      {seller.name}
-                    </Text>
+                    <Text style={[styles.sellerName, { color: colors.text }]}>{seller.name}</Text>
                     <View style={styles.ratingBadge}>
-                      <Text
-                        style={[styles.ratingText, { color: colors.primary }]}
-                      >
-                        {seller.rating}
-                      </Text>
-                      <MaterialIcons
-                        name="star"
-                        size={12}
-                        color={colors.primary}
-                      />
+                      <Text style={[styles.ratingText, { color: colors.primary }]}>{seller.rating.toFixed(1)}</Text>
+                      <MaterialIcons name="star" size={12} color={colors.primary} />
                     </View>
                   </View>
-                  <Text
-                    style={[
-                      styles.sellerCategory,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    {seller.category}
-                  </Text>
+                  <Text style={[styles.sellerCategory, { color: colors.textSecondary }]}>{seller.category}</Text>
                   <View style={styles.sellerMeta}>
                     <View style={styles.metaItem}>
-                      <MaterialIcons
-                        name="location-on"
-                        size={14}
-                        color={colors.textSecondary}
-                      />
-                      <Text
-                        style={[
-                          styles.metaText,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {seller.distance}
+                      <MaterialIcons name="schedule" size={14} color={colors.textSecondary} />
+                      <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                        {seller.minDeliveryTime}-{seller.maxDeliveryTime} min
                       </Text>
                     </View>
-                    <Text
-                      style={[styles.metaDot, { color: colors.textSecondary }]}
-                    >
-                      •
-                    </Text>
+                    <Text style={[styles.metaDot, { color: colors.textSecondary }]}>•</Text>
                     <View style={styles.metaItem}>
-                      <MaterialIcons
-                        name="schedule"
-                        size={14}
-                        color={colors.textSecondary}
-                      />
-                      <Text
-                        style={[
-                          styles.metaText,
-                          { color: colors.textSecondary },
-                        ]}
-                      >
-                        {seller.deliveryTime}
+                      <MaterialIcons name="delivery-dining" size={14} color={colors.textSecondary} />
+                      <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                        ${seller.deliveryFee.toFixed(2)} delivery
                       </Text>
                     </View>
                   </View>
                 </View>
-                {seller.discount && (
-                  <View
-                    style={[
-                      styles.discountBadge,
-                      { backgroundColor: colors.accent },
-                    ]}
-                  >
-                    <Text style={styles.discountText}>{seller.discount}</Text>
+                {seller.isFeatured && (
+                  <View style={[styles.discountBadge, { backgroundColor: colors.primary }]}>
+                    <Text style={styles.discountText}>Featured</Text>
                   </View>
                 )}
               </TouchableOpacity>

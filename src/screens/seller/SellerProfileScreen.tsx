@@ -1,9 +1,12 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Skeleton } from "@/src/components/common/Skeleton";
+import { supabase } from "@/src/services/supabase";
+import { addItem, selectCartItems } from "@/src/store/slices/cartSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -16,82 +19,114 @@ import {
 
 const { width } = Dimensions.get("window");
 
-const CATEGORIES = ["Popular", "Burgers", "Sides", "Drinks", "Desserts"];
+interface Seller {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  rating: number;
+  minDeliveryTime: number;
+  maxDeliveryTime: number;
+  deliveryFee: number;
+  category: string;
+}
 
-const MENU_ITEMS = [
-  {
-    id: "1",
-    category: "Popular",
-    name: "Signature Whopper",
-    description:
-      "Flame-grilled beef patty, topped with tomatoes, fresh cut lettuce, mayo, pickles.",
-    price: 12.99,
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-  },
-  {
-    id: "2",
-    category: "Popular",
-    name: "Loaded Cheesy Fries",
-    description:
-      "Golden fries loaded with cheddar cheese sauce, bacon bits, and green onions.",
-    price: 6.99,
-    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400",
-  },
-  {
-    id: "3",
-    category: "Drinks",
-    name: "Strawberry Shake",
-    description:
-      "Creamy strawberry soft serve blended with fresh milk and topped with whipped cream.",
-    price: 4.5,
-    image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400",
-  },
-  {
-    id: "4",
-    category: "Drinks",
-    name: "Iced Lemon Tea",
-    description: "Freshly brewed tea with a splash of lemon and mint leaves.",
-    price: 3.25,
-    image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
-  },
-];
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  imageUrl: string;
+  category: string;
+  isAvailable: boolean;
+}
 
 export const SellerProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const [selectedCategory, setSelectedCategory] = useState("Popular");
-  const [cartItems, setCartItems] = useState<{ [key: string]: number }>({});
+  const dispatch = useAppDispatch();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const [seller, setSeller] = useState<Seller | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [isLoading, setIsLoading] = useState(true);
 
+  const cartItems = useAppSelector(selectCartItems);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!id) return;
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const [{ data: sellerData }, { data: itemsData }] = await Promise.all([
+          supabase.from("sellers").select("*").eq("id", id).single(),
+          supabase.from("menu_items").select("*").eq("seller_id", id).eq("is_available", true),
+        ]);
+        if (sellerData) {
+          setSeller({
+            id: sellerData.id,
+            name: sellerData.name,
+            description: sellerData.description ?? "",
+            imageUrl: sellerData.image_url ?? "",
+            rating: sellerData.rating ?? 0,
+            minDeliveryTime: sellerData.min_delivery_time ?? 20,
+            maxDeliveryTime: sellerData.max_delivery_time ?? 40,
+            deliveryFee: sellerData.delivery_fee ?? 0,
+            category: sellerData.category ?? "",
+          });
+        }
+        setMenuItems((itemsData ?? []).map((i: any) => ({
+          id: i.id,
+          name: i.name,
+          description: i.description ?? "",
+          price: i.price,
+          imageUrl: i.image_url ?? "",
+          category: i.category ?? "Other",
+          isAvailable: i.is_available,
+        })));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [id]);
 
-  const cartCount = Object.values(cartItems).reduce(
-    (sum, count) => sum + count,
-    0,
-  );
-  const cartTotal = Object.entries(cartItems).reduce((sum, [id, count]) => {
-    const item = MENU_ITEMS.find((i) => i.id === id);
-    return sum + (item?.price || 0) * count;
-  }, 0);
+  // Derive categories from fetched items
+  const categories = useMemo(() => {
+    const cats = ["All", ...Array.from(new Set(menuItems.map((i) => i.category)))];
+    return cats;
+  }, [menuItems]);
 
-  const addToCart = (itemId: string) => {
-    setCartItems((prev) => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1,
+  // Cart counts derived from Redux state — stays in sync across screens
+  const cartCountMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    cartItems.forEach((i) => { map[i.id] = i.quantity; });
+    return map;
+  }, [cartItems]);
+
+  const cartCount = cartItems.reduce((s, i) => s + i.quantity, 0);
+  const cartTotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  const addToCart = (item: MenuItem) => {
+    if (!seller) return;
+    const existing = cartItems.find((c) => c.id === item.id);
+    dispatch(addItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+      sellerId: seller.id,
+      sellerName: seller.name,
+      imageUrl: item.imageUrl,
+      customizations: [],
     }));
   };
 
-  const filteredItems = MENU_ITEMS.filter(
-    (item) =>
-      selectedCategory === "Popular" || item.category === selectedCategory,
-  );
+  const filteredItems = selectedCategory === "All"
+    ? menuItems
+    : menuItems.filter((i) => i.category === selectedCategory);
 
   const renderSkeleton = () => (
     <View style={styles.menuContent}>
@@ -167,53 +202,31 @@ export const SellerProfileScreen: React.FC = () => {
           ) : (
             <View style={styles.sellerTitleContainer}>
               <Text style={[styles.sellerName, { color: colors.text }]}>
-                Burger King & Queen
+                {seller?.name ?? ""}
               </Text>
               <View style={styles.sellerMeta}>
                 <View style={styles.ratingBadge}>
                   <Text style={[styles.ratingText, { color: colors.primary }]}>
-                    4.8
+                    {seller?.rating.toFixed(1)}
                   </Text>
                   <MaterialIcons name="star" size={12} color={colors.primary} />
                 </View>
-                <Text
-                  style={[styles.metaText, { color: colors.textSecondary }]}
-                >
-                  (500+)
+                <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                  {seller?.minDeliveryTime}-{seller?.maxDeliveryTime} min
                 </Text>
-                <Text style={[styles.metaDot, { color: colors.textSecondary }]}>
-                  •
-                </Text>
-                <Text
-                  style={[styles.metaText, { color: colors.textSecondary }]}
-                >
-                  25-35 min
-                </Text>
-                <Text style={[styles.metaDot, { color: colors.textSecondary }]}>
-                  •
-                </Text>
-                <Text
-                  style={[styles.metaText, { color: colors.textSecondary }]}
-                >
-                  American
+                <Text style={[styles.metaDot, { color: colors.textSecondary }]}>•</Text>
+                <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                  {seller?.category}
                 </Text>
               </View>
             </View>
           )}
         </View>
         {isLoading ? (
-          <Skeleton
-            width="100%"
-            height={40}
-            borderRadius={4}
-            style={{ marginTop: 8 }}
-          />
+          <Skeleton width="100%" height={40} borderRadius={4} style={{ marginTop: 8 }} />
         ) : (
-          <Text
-            style={[styles.sellerDescription, { color: colors.textSecondary }]}
-          >
-            Juicy flame-grilled burgers made with fresh ingredients, topped with
-            our secret sauce and served with crispy fries.
+          <Text style={[styles.sellerDescription, { color: colors.textSecondary }]}>
+            {seller?.description}
           </Text>
         )}
       </View>
@@ -234,29 +247,20 @@ export const SellerProfileScreen: React.FC = () => {
             ? [1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} width={80} height={40} borderRadius={20} />
               ))
-            : CATEGORIES.map((category) => (
+            : categories.map((category) => (
                 <TouchableOpacity
                   key={category}
                   style={[
                     styles.categoryTab,
-                    selectedCategory === category && {
-                      backgroundColor: colors.primary,
-                    },
-                    selectedCategory !== category && {
-                      backgroundColor: colors.surface,
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    },
+                    selectedCategory === category && { backgroundColor: colors.primary },
+                    selectedCategory !== category && { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
                   ]}
                   onPress={() => setSelectedCategory(category)}
                 >
                   <Text
                     style={[
                       styles.categoryTabText,
-                      {
-                        color:
-                          selectedCategory === category ? "#fff" : colors.text,
-                      },
+                      { color: selectedCategory === category ? "#fff" : colors.text },
                     ]}
                   >
                     {category}
@@ -309,7 +313,7 @@ export const SellerProfileScreen: React.FC = () => {
 
                 <View style={styles.menuItemImageContainer}>
                   <Image
-                    source={{ uri: item.image }}
+                    source={{ uri: item.imageUrl }}
                     style={styles.menuItemImage}
                   />
                   <TouchableOpacity
@@ -319,9 +323,15 @@ export const SellerProfileScreen: React.FC = () => {
                         backgroundColor: colors.primary,
                       },
                     ]}
-                    onPress={() => addToCart(item.id)}
+                    onPress={() => addToCart(item)}
                   >
-                    <MaterialIcons name="add" size={24} color="#fff" />
+                    {(cartCountMap[item.id] ?? 0) > 0 ? (
+                      <Text style={{ color: "#fff", fontWeight: "800", fontSize: 13 }}>
+                        {cartCountMap[item.id]}
+                      </Text>
+                    ) : (
+                      <MaterialIcons name="add" size={24} color="#fff" />
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
