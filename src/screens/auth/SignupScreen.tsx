@@ -2,9 +2,11 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Button } from "@/src/components/common/Button";
 import { Input } from "@/src/components/common/Input";
+import { signupThunk, clearError } from "@/src/store/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +21,8 @@ export const SignupScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { loading, error } = useAppSelector((state) => state.auth);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,10 +30,34 @@ export const SignupScreen: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
-  const handleSignup = () => {
-    // TODO: Implement actual signup logic
-    router.replace("/(tabs)");
+  // Clear any previous auth errors when this screen mounts
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  const handleSignup = async () => {
+    setValidationError("");
+
+    // Basic validation
+    if (!name.trim()) return setValidationError("Please enter your full name.");
+    if (!email.trim() || !email.includes("@"))
+      return setValidationError("Please enter a valid email address.");
+    if (!phone.trim())
+      return setValidationError("Please enter your phone number.");
+    if (password.length < 8)
+      return setValidationError("Password must be at least 8 characters.");
+    if (!agreeToTerms)
+      return setValidationError("You must agree to the Terms & Conditions.");
+
+    const result = await dispatch(
+      signupThunk({ email: email.trim(), password, fullName: name.trim(), phone: phone.trim() })
+    );
+
+    if (signupThunk.fulfilled.match(result)) {
+      // _layout.tsx auth listener handles the redirect automatically
+    }
   };
 
   return (
