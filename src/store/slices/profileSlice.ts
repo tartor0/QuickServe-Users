@@ -38,12 +38,14 @@ const initialState: ProfileState = {
 
 export const fetchProfile = createAsyncThunk(
   "profile/fetch",
-  async (userId: string, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", userId)
+        .eq("id", user.id)
         .single();
       if (error) throw error;
       return data;

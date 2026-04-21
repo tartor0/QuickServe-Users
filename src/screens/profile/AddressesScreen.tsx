@@ -1,9 +1,14 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { profileService } from "@/src/services/api/profile";
+import { fetchAddresses } from "@/src/store/slices/profileSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import {
+    Alert,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,37 +16,45 @@ import {
     View,
 } from "react-native";
 
-const ADDRESSES = [
-  {
-    id: "1",
-    label: "Home",
-    address: "123 Main Street, Apt 4B",
-    city: "Queens, NY 11101",
-    isDefault: true,
-    icon: "home",
-  },
-  {
-    id: "2",
-    label: "Work",
-    address: "456 Tech Avenue, Floor 12",
-    city: "Manhattan, NY 10012",
-    isDefault: false,
-    icon: "business",
-  },
-  {
-    id: "3",
-    label: "Gym",
-    address: "789 Fitness Blvd",
-    city: "Brooklyn, NY 11201",
-    isDefault: false,
-    icon: "fitness-center",
-  },
-];
+const LABEL_ICONS: Record<string, string> = {
+  Home: "home",
+  Work: "business",
+  Gym: "fitness-center",
+  School: "school",
+  Other: "location-on",
+};
 
 export const AddressesScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const { addresses, loading } = useAppSelector((s) => s.profile);
+
+  const load = useCallback(() => {
+    dispatch(fetchAddresses());
+  }, [dispatch]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleDelete = (id: string) => {
+    Alert.alert("Delete Address", "Remove this address?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete", style: "destructive",
+        onPress: async () => {
+          await profileService.deleteAddress(id);
+          load();
+        },
+      },
+    ]);
+  };
+
+  const handleSetDefault = async (id: string) => {
+    await profileService.setDefaultAddress(id);
+    load();
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -69,9 +82,18 @@ export const AddressesScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         <View style={styles.addressList}>
-          {ADDRESSES.map((item) => (
+          {addresses.length === 0 && !loading ? (
+            <View style={{ alignItems: "center", paddingTop: 60 }}>
+              <MaterialIcons name="location-off" size={56} color={colors.border} />
+              <Text style={[{ color: colors.textSecondary, fontSize: 16, marginTop: 16, fontWeight: "600" }]}>
+                No saved addresses yet
+              </Text>
+            </View>
+          ) : (
+            addresses.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={[styles.addressCard, { backgroundColor: colors.surface }]}
@@ -90,7 +112,7 @@ export const AddressesScreen: React.FC = () => {
                 ]}
               >
                 <MaterialIcons
-                  name={item.icon as any}
+                  name={(LABEL_ICONS[item.label] ?? "location-on") as any}
                   size={24}
                   color={colors.primary}
                 />
@@ -110,13 +132,18 @@ export const AddressesScreen: React.FC = () => {
                 <Text
                   style={[styles.addressLine, { color: colors.textSecondary }]}
                 >
-                  {item.address}
+                  {item.address || item.street}
                 </Text>
-                <Text
-                  style={[styles.cityLine, { color: colors.textSecondary }]}
-                >
+                <Text style={[styles.cityLine, { color: colors.textSecondary }]}>
                   {item.city}
                 </Text>
+                {!item.isDefault && (
+                  <TouchableOpacity onPress={() => handleSetDefault(item.id)}>
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700", marginTop: 4 }}>
+                      Set as default
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <View style={styles.actionColumn}>
@@ -131,19 +158,16 @@ export const AddressesScreen: React.FC = () => {
                 >
                   <MaterialIcons name="edit" size={20} color={colors.primary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn}>
-                  <MaterialIcons
-                    name="delete-outline"
-                    size={20}
-                    color={colors.error}
-                  />
+                <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(item.id)}>
+                  <MaterialIcons name="delete-outline" size={20} color={colors.error} />
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
-          ))}
+            ))
+          )}
         </View>
 
-        {/* Empty State Illustration would go here if ADDRESES was empty */}
+        {/* spacer */}
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.surface }]}>

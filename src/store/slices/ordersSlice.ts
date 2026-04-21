@@ -42,6 +42,34 @@ const initialState: OrdersState = {
   error: null,
 };
 
+// Map raw Supabase row (snake_case + joined tables) → Order (camelCase)
+function mapRow(row: any): Order {
+  return {
+    id: row.id,
+    sellerId: row.seller_id,
+    sellerName: row.sellers?.name ?? "",
+    sellerImage: row.sellers?.image_url ?? "",
+    status: row.status,
+    items: (row.order_items ?? []).map((i: any) => ({
+      id: i.id,
+      name: i.name ?? i.menu_items?.name ?? "",
+      price: i.unit_price ?? i.price ?? 0,
+      quantity: i.quantity,
+      customizations: i.customizations ?? [],
+    })),
+    subtotal: row.subtotal ?? 0,
+    deliveryFee: row.delivery_fee ?? 0,
+    serviceFee: row.service_fee ?? 0,
+    tip: row.tip ?? 0,
+    tax: row.tax ?? 0,
+    discount: row.discount ?? 0,
+    total: row.total ?? 0,
+    deliveryAddress: row.addresses?.street ?? row.delivery_address ?? "",
+    createdAt: row.created_at,
+    estimatedDeliveryTime: row.estimated_delivery_time ?? null,
+  };
+}
+
 export const fetchOrders = createAsyncThunk(
   "orders/fetchAll",
   async (_, { rejectWithValue }) => {
@@ -111,7 +139,7 @@ const ordersSlice = createSlice({
     });
     builder.addCase(fetchOrders.fulfilled, (state, action) => {
       state.loading = false;
-      state.orders = action.payload ?? [];
+      state.orders = (action.payload ?? []).map(mapRow);
     });
     builder.addCase(fetchOrders.rejected, (state, action) => {
       state.loading = false;
@@ -119,7 +147,7 @@ const ordersSlice = createSlice({
     });
 
     builder.addCase(fetchActiveOrder.fulfilled, (state, action) => {
-      state.activeOrder = action.payload ?? null;
+      state.activeOrder = action.payload ? mapRow(action.payload) : null;
     });
   },
 });
