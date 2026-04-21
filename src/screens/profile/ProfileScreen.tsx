@@ -1,8 +1,11 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { logoutThunk } from "@/src/store/slices/authSlice";
+import { fetchProfile } from "@/src/store/slices/profileSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import {
     Image,
     ScrollView,
@@ -85,16 +88,28 @@ export const ProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const { profile } = useAppSelector((s) => s.profile);
+  const { orders } = useAppSelector((s) => s.orders);
+  const user = useAppSelector((s) => s.auth.user);
+
+  useEffect(() => {
+    dispatch(fetchProfile());
+  }, [dispatch]);
+
+  const displayName = profile?.fullName ?? user?.email?.split("@")[0] ?? "User";
+  const displayEmail = user?.email ?? "";
+  const avatarUri = profile?.avatarUrl
+    ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=128&background=3B82F6&color=fff`;
 
   const handleMenuPress = (route: string | null) => {
-    if (route) {
-      router.push(route as any);
-    }
+    if (route) router.push(route as any);
   };
 
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    router.replace("/auth/onboarding");
+  const handleLogout = async () => {
+    await dispatch(logoutThunk());
+    // _layout.tsx auth listener handles the redirect
   };
 
   return (
@@ -114,9 +129,7 @@ export const ProfileScreen: React.FC = () => {
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{
-                uri: "https://ui-avatars.com/api/?name=Alex+Johnson&size=128&background=3B82F6&color=fff",
-              }}
+              source={{ uri: avatarUri }}
               style={styles.avatar}
             />
             <TouchableOpacity
@@ -130,18 +143,14 @@ export const ProfileScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.userName, { color: colors.text }]}>
-            Alex Johnson
-          </Text>
-          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>
-            alex.j@example.com
-          </Text>
+          <Text style={[styles.userName, { color: colors.text }]}>{displayName}</Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{displayEmail}</Text>
         </View>
 
         {/* Statistics Section */}
         <View style={styles.statsContainer}>
           <View style={[styles.statItem, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.statValue, { color: colors.text }]}>42</Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>{orders.length}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
               Orders
             </Text>
