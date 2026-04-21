@@ -1,10 +1,22 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { EmptyState } from "@/src/components/common/EmptyState";
+import { ordersService } from "@/src/services/api/orders";
+import {
+  applyPromo,
+  clearCart,
+  removeItem,
+  selectCartItems,
+  selectCartSubtotal,
+  selectPromoDiscount,
+  updateQuantity,
+} from "@/src/store/slices/cartSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -14,75 +26,56 @@ import {
     View,
 } from "react-native";
 
-const CART_ITEMS = [
-  {
-    id: "1",
-    name: "Signature Whopper",
-    seller: "Burger King",
-    price: 12.99,
-    quantity: 2,
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200",
-    customizations: ["Extra cheese", "No onions"],
-  },
-  {
-    id: "2",
-    name: "Loaded Cheesy Fries",
-    seller: "Burger King",
-    price: 6.99,
-    quantity: 1,
-    image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200",
-    customizations: [],
-  },
-  {
-    id: "3",
-    name: "Strawberry Shake",
-    seller: "Burger King",
-    price: 4.5,
-    quantity: 1,
-    image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200",
-    customizations: ["Large size"],
-  },
-];
-
 export const CartScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const [items, setItems] = useState(CART_ITEMS);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoApplied, setPromoApplied] = useState(false);
+  const dispatch = useAppDispatch();
+
+  // Real cart state from Redux
+  const items = useAppSelector(selectCartItems);
+  const subtotal = useAppSelector(selectCartSubtotal);
+  const promoDiscount = useAppSelector(selectPromoDiscount);
+  const storedPromoCode = useAppSelector((s) => s.cart.promoCode);
+  const promoApplied = !!promoDiscount;
+
+  const [promoInput, setPromoInput] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState("");
   const [tipPercentage, setTipPercentage] = useState(15);
 
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0,
-  );
-  const discount = promoApplied ? subtotal * 0.1 : 0;
-  const deliveryFee = 2.99;
+  // Calculated totals — discount is server-validated, rest computed locally
+  const discount = promoDiscount;
+  const deliveryFee = items.length > 0 ? 2.99 : 0;
   const serviceFee = subtotal * 0.05;
   const tip = subtotal * (tipPercentage / 100);
   const tax = (subtotal - discount) * 0.08;
   const total = subtotal - discount + deliveryFee + serviceFee + tip + tax;
 
-  const updateQuantity = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? { ...item, quantity: Math.max(0, item.quantity + delta) }
-            : item,
-        )
-        .filter((item) => item.quantity > 0),
-    );
-  };
-
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const applyPromo = () => {
-    if (promoCode.toLowerCase() === "save10") {
-      setPromoApplied(true);
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setPromoLoading(true);
+    setPromoError("");
+    try {
+      const result = await ordersService.validatePromo({
+        code: promoInput.trim(),
+        subtotal,
+      });
+      if (result.valid && result.discountType) {
+        dispatch(
+          applyPromo({
+            code: promoInput.trim().toUpperCase(),
+            discountAmount: result.discountAmount,
+            discountType: result.discountType,
+          })
+        );
+      } else {
+        setPromoError(result.message);
+      }
+    } catch (e: any) {
+      setPromoError("Failed to validate promo code. Try again.");
+    } finally {
+      setPromoLoading(false);
     }
   };
 
@@ -100,7 +93,7 @@ export const CartScreen: React.FC = () => {
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           Your Cart
         </Text>
-        <TouchableOpacity onPress={() => setItems([])}>
+        <TouchableOpacity onPress={() => dispatch(clearCart())}>
           <Text style={[styles.clearText, { color: "#ef4444" }]}>Clear</Text>
         </TouchableOpacity>
       </View>
@@ -123,7 +116,7 @@ export const CartScreen: React.FC = () => {
             {/* Cart Items */}
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Items from {items[0]?.seller}
+                Items from {items[0]?.sellerName}
               </Text>
               <View style={styles.itemsList}>
                 {items.map((item) => (
@@ -135,7 +128,7 @@ export const CartScreen: React.FC = () => {
                     ]}
                   >
                     <Image
-                      source={{ uri: item.image }}
+                      source={{ uri: item.imageUrl }}
                       style={styles.itemImage}
                     />
                     <View style={styles.itemInfo}>
@@ -163,7 +156,9 @@ export const CartScreen: React.FC = () => {
                             styles.quantityBtn,
                             { backgroundColor: colors.background },
                           ]}
-                          onPress={() => updateQuantity(item.id, -1)}
+                          onPress={() =>
+                            dispatch(updateQuantity({ id: item.id, quantity: item.quantity - 1 }))
+                          }
                         >
                           <MaterialIcons
                             name="remove"
@@ -179,14 +174,16 @@ export const CartScreen: React.FC = () => {
                             styles.quantityBtn,
                             { backgroundColor: colors.primary },
                           ]}
-                          onPress={() => updateQuantity(item.id, 1)}
+                           onPress={() =>
+                            dispatch(updateQuantity({ id: item.id, quantity: item.quantity + 1 }))
+                          }
                         >
                           <MaterialIcons name="add" size={16} color="#fff" />
                         </TouchableOpacity>
                       </View>
                       <TouchableOpacity
                         style={styles.removeBtn}
-                        onPress={() => removeItem(item.id)}
+                        onPress={() => dispatch(removeItem(item.id))}
                       >
                         <MaterialIcons
                           name="delete-outline"
@@ -215,8 +212,8 @@ export const CartScreen: React.FC = () => {
                   style={[styles.promoInput, { color: colors.text }]}
                   placeholder="Enter promo code"
                   placeholderTextColor={colors.textSecondary}
-                  value={promoCode}
-                  onChangeText={setPromoCode}
+                  value={promoApplied ? storedPromoCode : promoInput}
+                  onChangeText={setPromoInput}
                   editable={!promoApplied}
                 />
                 <TouchableOpacity
@@ -226,23 +223,28 @@ export const CartScreen: React.FC = () => {
                       ? { backgroundColor: "#10b981" }
                       : { backgroundColor: colors.primary },
                   ]}
-                  onPress={applyPromo}
-                  disabled={promoApplied}
+                  onPress={handleApplyPromo}
+                  disabled={promoApplied || promoLoading}
                 >
-                  <Text style={styles.applyBtnText}>
-                    {promoApplied ? "Applied" : "Apply"}
-                  </Text>
+                  {promoLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.applyBtnText}>
+                      {promoApplied ? "Applied" : "Apply"}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
+              {promoError ? (
+                <Text style={{ color: "#ef4444", fontSize: 12, marginTop: 8 }}>
+                  {promoError}
+                </Text>
+              ) : null}
               {promoApplied && (
                 <View style={styles.promoSuccess}>
-                  <MaterialIcons
-                    name="check-circle"
-                    size={16}
-                    color="#10b981"
-                  />
+                  <MaterialIcons name="check-circle" size={16} color="#10b981" />
                   <Text style={[styles.promoSuccessText, { color: "#10b981" }]}>
-                    10% discount applied!
+                    ${discount.toFixed(2)} discount applied!
                   </Text>
                 </View>
               )}
