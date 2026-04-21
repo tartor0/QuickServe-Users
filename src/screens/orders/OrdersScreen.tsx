@@ -115,67 +115,60 @@ export const OrdersScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         {/* Active Orders Section */}
-        {ACTIVE_ORDERS.length > 0 && selectedFilter === "All" && (
+        {activeOrder && selectedFilter === "All" && (
           <>
             <Text style={[styles.sectionTitleText, { color: colors.text }]}>
               Active Orders
             </Text>
-            {ACTIVE_ORDERS.map((order) => (
-              <TouchableOpacity
-                key={order.id}
-                style={[
-                  styles.orderCard,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.primary,
-                    borderWidth: 1,
-                  },
-                ]}
-                onPress={() => router.push(`/orders/tracking` as any)}
-              >
-                <View style={styles.orderHeader}>
-                  <View style={styles.orderInfo}>
-                    <View style={styles.statusRow}>
-                      <Text
-                        style={[
-                          styles.statusText,
-                          { color: order.statusColor },
-                        ]}
-                      >
-                        {order.status.toUpperCase()}
-                      </Text>
-                      <View style={styles.dot} />
-                      <Text
-                        style={[styles.dateText, { color: colors.primary }]}
-                      >
-                        ETA: {order.eta}
-                      </Text>
-                    </View>
-                    <Text style={[styles.sellerName, { color: colors.text }]}>
-                      {order.seller}
-                    </Text>
-                    <TouchableOpacity
+            <TouchableOpacity
+              style={[
+                styles.orderCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.primary,
+                  borderWidth: 1,
+                },
+              ]}
+              onPress={() => router.push(`/orders/tracking` as any)}
+            >
+              <View style={styles.orderHeader}>
+                <View style={styles.orderInfo}>
+                  <View style={styles.statusRow}>
+                    <Text
                       style={[
-                        styles.trackBtnInline,
-                        { backgroundColor: colors.primary },
+                        styles.statusText,
+                        { color: STATUS_COLORS[activeOrder.status] ?? "#6b7280" },
                       ]}
-                      onPress={() => router.push(`/orders/tracking` as any)}
                     >
-                      <MaterialIcons
-                        name="location-on"
-                        size={16}
-                        color="#fff"
-                      />
-                      <Text style={styles.trackBtnTextInline}>Track Order</Text>
-                    </TouchableOpacity>
+                      {activeOrder.status.replace("_", " ").toUpperCase()}
+                    </Text>
+                    <View style={styles.dot} />
+                    <Text style={[styles.dateText, { color: colors.primary }]}>
+                      {activeOrder.estimatedDeliveryTime
+                        ? `ETA: ${new Date(activeOrder.estimatedDeliveryTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                        : "Calculating ETA..."}
+                    </Text>
                   </View>
-                  <Image
-                    source={{ uri: order.image }}
-                    style={styles.orderImage}
-                  />
+                  <Text style={[styles.sellerName, { color: colors.text }]}>
+                    {activeOrder.sellerName}
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.trackBtnInline,
+                      { backgroundColor: colors.primary },
+                    ]}
+                    onPress={() => router.push(`/orders/tracking` as any)}
+                  >
+                    <MaterialIcons name="location-on" size={16} color="#fff" />
+                    <Text style={styles.trackBtnTextInline}>Track Order</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
-            ))}
+                <Image
+                  source={{ uri: activeOrder.sellerImage }}
+                  style={styles.orderImage}
+                />
+              </View>
+            </TouchableOpacity>
             <View style={{ height: 16 }} />
           </>
         )}
@@ -184,9 +177,7 @@ export const OrdersScreen: React.FC = () => {
           Past Orders
         </Text>
 
-        {ORDERS.filter(
-          (o) => selectedFilter === "All" || o.status === selectedFilter,
-        ).map((order) => (
+        {filteredPastOrders.map((order) => (
           <TouchableOpacity
             key={order.id}
             style={[styles.orderCard, { backgroundColor: colors.surface }]}
@@ -196,37 +187,32 @@ export const OrdersScreen: React.FC = () => {
               <View style={styles.orderInfo}>
                 <View style={styles.statusRow}>
                   <Text
-                    style={[styles.statusText, { color: order.statusColor }]}
+                    style={[
+                      styles.statusText,
+                      { color: STATUS_COLORS[order.status] ?? "#6b7280" },
+                    ]}
                   >
                     {order.status.toUpperCase()}
                   </Text>
                   <View style={styles.dot} />
-                  <Text
-                    style={[styles.dateText, { color: colors.textSecondary }]}
-                  >
-                    {order.date}
+                  <Text style={[styles.dateText, { color: colors.textSecondary }]}>
+                    {new Date(order.createdAt).toLocaleDateString("en-US", {
+                      month: "short", day: "numeric", year: "numeric",
+                    })}
                   </Text>
                 </View>
                 <Text style={[styles.sellerName, { color: colors.text }]}>
-                  {order.seller}
+                  {order.sellerName}
                 </Text>
                 <Text style={[styles.totalText, { color: colors.primary }]}>
-                  {order.total}
+                  ${order.total.toFixed(2)}
                 </Text>
               </View>
-
-              <Image source={{ uri: order.image }} style={styles.orderImage} />
+              <Image source={{ uri: order.sellerImage }} style={styles.orderImage} />
             </View>
-
-            <View
-              style={[styles.orderFooter, { borderTopColor: colors.border }]}
-            >
-              <TouchableOpacity
-                onPress={() => router.push(`/orders/${order.id}` as any)}
-              >
-                <Text
-                  style={[styles.viewDetailsText, { color: colors.primary }]}
-                >
+            <View style={[styles.orderFooter, { borderTopColor: colors.border }]}>
+              <TouchableOpacity onPress={() => router.push(`/orders/${order.id}` as any)}>
+                <Text style={[styles.viewDetailsText, { color: colors.primary }]}>
                   View Details
                 </Text>
               </TouchableOpacity>
@@ -241,7 +227,7 @@ export const OrdersScreen: React.FC = () => {
         ))}
 
         {/* Empty State */}
-        {ORDERS.length === 0 && (
+        {filteredPastOrders.length === 0 && !loading && (
           <EmptyState
             icon="receipt-long"
             title="No orders yet"

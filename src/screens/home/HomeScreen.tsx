@@ -7,6 +7,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
+    Dimensions,
     Image,
     RefreshControl,
     ScrollView,
@@ -17,6 +18,9 @@ import {
     useWindowDimensions,
     View,
 } from "react-native";
+
+// Used only in StyleSheet.create (evaluated once — acceptable for banners)
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 // BANNERS stay static — these are marketing content, not DB data
 const BANNERS = [
@@ -48,7 +52,7 @@ export const HomeScreen: React.FC = () => {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const { width: SCREEN_WIDTH } = useWindowDimensions(); // fixes stale width on orientation change
+  const { width: screenWidth } = useWindowDimensions();
 
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [featuredSellers, setFeaturedSellers] = useState<Seller[]>([]);
@@ -262,7 +266,7 @@ export const HomeScreen: React.FC = () => {
               style={styles.recentContainer}
               contentContainerStyle={styles.recentContent}
             >
-              {RECENTLY_ORDERED.map((item) => (
+              {sellers.slice(0, 5).map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={[
@@ -272,7 +276,7 @@ export const HomeScreen: React.FC = () => {
                   onPress={() => router.push(`/seller/${item.id}` as any)}
                 >
                   <Image
-                    source={{ uri: item.image }}
+                    source={{ uri: item.imageUrl }}
                     style={styles.recentImage}
                   />
                   <Text
@@ -299,7 +303,7 @@ export const HomeScreen: React.FC = () => {
 
             {/* Sellers List */}
             <View style={styles.sellersList}>
-              {SELLERS.map((seller) => (
+              {sellers.map((seller: import("@/src/services/api/sellers").Seller) => (
                 <TouchableOpacity
                   key={seller.id}
                   style={[
@@ -311,10 +315,10 @@ export const HomeScreen: React.FC = () => {
                 >
                   <View style={styles.sellerImageContainer}>
                     <Image
-                      source={{ uri: seller.image }}
+                      source={{ uri: seller.imageUrl }}
                       style={styles.sellerImage}
                     />
-                    {seller.discount && (
+                    {seller.isFeatured && (
                       <View style={styles.discountBadge}>
                         <MaterialIcons
                           name="local-offer"
@@ -322,7 +326,7 @@ export const HomeScreen: React.FC = () => {
                           color="#fff"
                         />
                         <Text style={styles.discountText}>
-                          {seller.discount}
+                          Featured
                         </Text>
                       </View>
                     )}
@@ -335,7 +339,7 @@ export const HomeScreen: React.FC = () => {
                     </TouchableOpacity>
                     <View style={styles.deliveryTimeBadge}>
                       <Text style={styles.deliveryTimeText}>
-                        {seller.deliveryTime}
+                        {`${seller.minDeliveryTime}-${seller.maxDeliveryTime} min`}
                       </Text>
                     </View>
                   </View>
@@ -372,7 +376,7 @@ export const HomeScreen: React.FC = () => {
                             { color: colors.textSecondary },
                           ]}
                         >
-                          {seller.distance}
+                          {seller.address || seller.category}
                         </Text>
                       </View>
                       <Text
