@@ -1,9 +1,13 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { updateProfile } from "@/src/store/slices/profileSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
+    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -19,14 +23,37 @@ export const EditProfileScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
-  const [name, setName] = useState("Alex Thompson");
-  const [email, setEmail] = useState("alex.thompson@example.com");
-  const [phone, setPhone] = useState("+1 (555) 012-3456");
+  const { profile } = useAppSelector((s) => s.profile);
+  const userEmail = useAppSelector((s) => s.auth.user?.email ?? "");
 
-  const handleSave = () => {
-    // Save logic
-    router.back();
+  const [name, setName] = useState(profile?.fullName ?? "");
+  const [phone, setPhone] = useState(profile?.phone ?? "");
+  const [saving, setSaving] = useState(false);
+
+  // Sync if profile loads after mount
+  useEffect(() => {
+    if (profile) {
+      setName(profile.fullName);
+      setPhone(profile.phone);
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      Alert.alert("Validation", "Name cannot be empty.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await dispatch(updateProfile({ full_name: name.trim(), phone: phone.trim() })).unwrap();
+      router.back();
+    } catch (e: any) {
+      Alert.alert("Error", e ?? "Failed to save profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -59,7 +86,8 @@ export const EditProfileScreen: React.FC = () => {
           <View style={styles.imageContainer}>
             <Image
               source={{
-                uri: "https://ui-avatars.com/api/?name=Alex+Thompson&background=3B82F6&color=fff&size=200",
+                uri: profile?.avatarUrl
+                  ?? `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "User")}&background=3B82F6&color=fff&size=200`,
               }}
               style={styles.profileImage}
             />
@@ -109,23 +137,18 @@ export const EditProfileScreen: React.FC = () => {
             <View
               style={[
                 styles.inputContainer,
-                { backgroundColor: colors.surface },
+                { backgroundColor: colors.surface, opacity: 0.6 },
               ]}
             >
-              <MaterialIcons
-                name="email"
-                size={20}
-                color={colors.textSecondary}
-              />
+              <MaterialIcons name="email" size={20} color={colors.textSecondary} />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
+                value={userEmail}
+                editable={false}
+                placeholder="Email address"
                 placeholderTextColor={colors.textSecondary}
-                keyboardType="email-address"
-                autoCapitalize="none"
               />
+              <MaterialIcons name="lock" size={16} color={colors.textSecondary} />
             </View>
           </View>
 
@@ -162,11 +185,15 @@ export const EditProfileScreen: React.FC = () => {
       {/* Save Button */}
       <View style={[styles.footer, { backgroundColor: colors.background }]}>
         <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: colors.primary }]}
+          style={[styles.saveBtn, { backgroundColor: saving ? colors.primary + "99" : colors.primary }]}
           onPress={handleSave}
           activeOpacity={0.8}
+          disabled={saving}
         >
-          <Text style={styles.saveBtnText}>Save Changes</Text>
+          {saving
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.saveBtnText}>Save Changes</Text>
+          }
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

@@ -1,8 +1,9 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
     Dimensions,
@@ -18,6 +19,13 @@ export const OrderConfirmationScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const { orderId } = useLocalSearchParams<{ orderId: string }>();
+  const activeOrder = useAppSelector((s) => s.orders.activeOrder);
+
+  // Use the live activeOrder if IDs match, otherwise fall back to the param
+  const displayId = (activeOrder?.id ?? orderId ?? "").slice(-6).toUpperCase();
+  const eta = activeOrder?.estimatedDeliveryTime ?? "25-35 min";
+  const address = activeOrder?.deliveryAddress ?? "Your saved address";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -53,36 +61,30 @@ export const OrderConfirmationScreen: React.FC = () => {
           />
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>
-          Order Placed!
-        </Text>
+        <Text style={[styles.title, { color: colors.text }]}>Order Placed!</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Your order #2492 has been successfully placed and is being prepared.
+          Your order #{displayId} has been placed and is being prepared.
         </Text>
 
         <View style={[styles.infoCard, { backgroundColor: colors.surface }]}>
           <View style={styles.infoRow}>
             <MaterialIcons name="schedule" size={20} color={colors.primary} />
             <Text style={[styles.infoText, { color: colors.text }]}>
-              Estimated delivery: 25-35 min
+              Estimated delivery: {eta}
             </Text>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.infoRow}>
-            <MaterialIcons
-              name="location-on"
-              size={20}
-              color={colors.primary}
-            />
-            <Text style={[styles.infoText, { color: colors.text }]}>
-              Delivering to Home
+            <MaterialIcons name="location-on" size={20} color={colors.primary} />
+            <Text style={[styles.infoText, { color: colors.text }]} numberOfLines={1}>
+              {address}
             </Text>
           </View>
         </View>
 
         <TouchableOpacity
           style={[styles.trackBtn, { backgroundColor: colors.primary }]}
-          onPress={() => router.push("/orders/tracking" as any)}
+          onPress={() => router.replace("/orders/tracking" as any)}
         >
           <Text style={styles.trackBtnText}>Track My Order</Text>
           <MaterialIcons name="arrow-forward" size={20} color="#fff" />
