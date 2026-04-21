@@ -1,9 +1,11 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ordersService } from "@/src/services/api/orders";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -12,43 +14,62 @@ import {
     View,
 } from "react-native";
 
-const ORDER_DATA = {
-  id: "2492",
-  date: "Oct 24, 2023, 12:45 PM",
-  status: "Delivered",
-  statusColor: "#10b981",
-  seller: {
-    name: "Burger King",
-    address: "Central Park, New York",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200",
-  },
-  delivery: {
-    address: "123 Main Street, Apt 4B",
-    city: "Queens, NY 11101",
-  },
-  payment: {
-    method: "Visa •••• 4242",
-    date: "Oct 24, 2023",
-  },
-  items: [
-    { qty: 2, name: "Signature Whopper", price: 25.98 },
-    { qty: 1, name: "Loaded Cheesy Fries", price: 6.99 },
-    { qty: 1, name: "Strawberry Shake", price: 4.5 },
-  ],
-  summary: {
-    subtotal: 37.47,
-    deliveryFee: 2.99,
-    serviceFee: 1.87,
-    tax: 3.14,
-    total: 45.47,
-  },
+const STATUS_COLORS: Record<string, string> = {
+  delivered: "#10b981",
+  cancelled: "#ef4444",
+  pending: "#f59e0b",
+  confirmed: "#3b82f6",
+  preparing: "#8b5cf6",
+  picked_up: "#3b82f6",
+  nearby: "#3b82f6",
+  arriving: "#3b82f6",
 };
 
 export const OrderDetailsScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    ordersService
+      .getById(id)
+      .then(setOrder)
+      .catch((e) => setError(e.message ?? "Failed to load order."))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 32 }]}>
+        <MaterialIcons name="error-outline" size={48} color="#ef4444" />
+        <Text style={[styles.headerTitle, { color: colors.text, marginTop: 16 }]}>{error || "Order not found"}</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+          <Text style={{ color: colors.primary, fontWeight: "700" }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const statusColor = STATUS_COLORS[order.status] ?? "#6b7280";
+  const seller = order.sellers ?? {};
+  const address = order.addresses ?? {};
+  const payment = order.payment_methods ?? {};
+  const orderItems = order.order_items ?? [];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -66,7 +87,7 @@ export const OrderDetailsScreen: React.FC = () => {
             Order Details
           </Text>
           <Text style={[styles.orderId, { color: colors.textSecondary }]}>
-            #{id || ORDER_DATA.id}
+            #{order.id.slice(0, 8).toUpperCase()}
           </Text>
         </View>
         <TouchableOpacity
@@ -90,19 +111,17 @@ export const OrderDetailsScreen: React.FC = () => {
           ]}
         >
           <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: ORDER_DATA.statusColor + "1A" },
-            ]}
+            style={[styles.statusBadge, { backgroundColor: statusColor + "1A" }]}
           >
-            <Text
-              style={[styles.statusText, { color: ORDER_DATA.statusColor }]}
-            >
-              {ORDER_DATA.status.toUpperCase()}
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {order.status.replace("_", " ").toUpperCase()}
             </Text>
           </View>
           <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-            {ORDER_DATA.date}
+            {new Date(order.created_at).toLocaleString("en-US", {
+              month: "short", day: "numeric", year: "numeric",
+              hour: "2-digit", minute: "2-digit",
+            })}
           </Text>
         </View>
 
@@ -116,18 +135,12 @@ export const OrderDetailsScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <Image
-              source={{ uri: ORDER_DATA.seller.image }}
+              source={{ uri: seller.image_url }}
               style={styles.sellerImage}
             />
             <View style={styles.infoContent}>
-              <Text style={[styles.infoTitle, { color: colors.text }]}>
-                {ORDER_DATA.seller.name}
-              </Text>
-              <Text
-                style={[styles.infoSubtitle, { color: colors.textSecondary }]}
-              >
-                {ORDER_DATA.seller.address}
-              </Text>
+              <Text style={[styles.infoTitle, { color: colors.text }]}>{seller.name}</Text>
+              <Text style={[styles.infoSubtitle, { color: colors.textSecondary }]}>{seller.address}</Text>
             </View>
             <MaterialIcons
               name="chevron-right"
@@ -161,10 +174,8 @@ export const OrderDetailsScreen: React.FC = () => {
               <Text style={[styles.infoTitle, { color: colors.text }]}>
                 Home
               </Text>
-              <Text
-                style={[styles.infoSubtitle, { color: colors.textSecondary }]}
-              >
-                {ORDER_DATA.delivery.address}, {ORDER_DATA.delivery.city}
+              <Text style={[styles.infoSubtitle, { color: colors.textSecondary }]}>
+                {address.street ? `${address.street}, ${address.city}` : "—"}
               </Text>
             </View>
           </View>
@@ -176,17 +187,11 @@ export const OrderDetailsScreen: React.FC = () => {
             ORDER ITEMS
           </Text>
           <View style={[styles.itemsCard, { backgroundColor: colors.surface }]}>
-            {ORDER_DATA.items.map((item, index) => (
+            {orderItems.map((item: any, index: number) => (
               <View key={index} style={styles.itemRow}>
-                <Text style={[styles.itemQty, { color: colors.textSecondary }]}>
-                  {item.qty}x
-                </Text>
-                <Text style={[styles.itemName, { color: colors.text }]}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.itemPrice, { color: colors.text }]}>
-                  ${item.price.toFixed(2)}
-                </Text>
+                <Text style={[styles.itemQty, { color: colors.textSecondary }]}>{item.quantity}x</Text>
+                <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.itemPrice, { color: colors.text }]}>${(item.price * item.quantity).toFixed(2)}</Text>
               </View>
             ))}
             <View
@@ -198,37 +203,19 @@ export const OrderDetailsScreen: React.FC = () => {
               >
                 Subtotal
               </Text>
-              <Text style={[styles.priceValue, { color: colors.text }]}>
-                ${ORDER_DATA.summary.subtotal.toFixed(2)}
-              </Text>
+              <Text style={[styles.priceValue, { color: colors.text }]}>${Number(order.subtotal).toFixed(2)}</Text>
             </View>
             <View style={styles.priceRow}>
-              <Text
-                style={[styles.priceLabel, { color: colors.textSecondary }]}
-              >
-                Delivery Fee
-              </Text>
-              <Text style={[styles.priceValue, { color: colors.text }]}>
-                ${ORDER_DATA.summary.deliveryFee.toFixed(2)}
-              </Text>
+              <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Delivery Fee</Text>
+              <Text style={[styles.priceValue, { color: colors.text }]}>${Number(order.delivery_fee).toFixed(2)}</Text>
             </View>
             <View style={styles.priceRow}>
-              <Text
-                style={[styles.priceLabel, { color: colors.textSecondary }]}
-              >
-                Tax
-              </Text>
-              <Text style={[styles.priceValue, { color: colors.text }]}>
-                ${ORDER_DATA.summary.tax.toFixed(2)}
-              </Text>
+              <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>Tax</Text>
+              <Text style={[styles.priceValue, { color: colors.text }]}>${Number(order.tax).toFixed(2)}</Text>
             </View>
             <View style={styles.priceRow}>
-              <Text style={[styles.totalLabel, { color: colors.text }]}>
-                Total
-              </Text>
-              <Text style={[styles.totalValue, { color: colors.primary }]}>
-                ${ORDER_DATA.summary.total.toFixed(2)}
-              </Text>
+              <Text style={[styles.totalLabel, { color: colors.text }]}>Total</Text>
+              <Text style={[styles.totalValue, { color: colors.primary }]}>${Number(order.total).toFixed(2)}</Text>
             </View>
           </View>
         </View>
@@ -246,7 +233,7 @@ export const OrderDetailsScreen: React.FC = () => {
             </View>
             <View style={styles.infoContent}>
               <Text style={[styles.infoTitle, { color: colors.text }]}>
-                {ORDER_DATA.payment.method}
+                {payment.brand ? `${payment.brand.charAt(0).toUpperCase() + payment.brand.slice(1)} •••• ${payment.last_four}` : "—"}
               </Text>
               <Text
                 style={[styles.infoSubtitle, { color: colors.textSecondary }]}

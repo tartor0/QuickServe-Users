@@ -1,9 +1,20 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ordersService } from "@/src/services/api/orders";
+import {
+  clearCart,
+  selectCartItems,
+  selectCartSubtotal,
+  selectPromoDiscount,
+  selectIdempotencyKey,
+} from "@/src/store/slices/cartSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
+import { fetchAddresses } from "@/src/store/slices/profileSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -21,13 +32,61 @@ export const CheckoutScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+
+  const items = useAppSelector(selectCartItems);
+  const subtotal = useAppSelector(selectCartSubtotal);
+  const promoDiscount = useAppSelector(selectPromoDiscount);
+  const idempotencyKey = useAppSelector(selectIdempotencyKey);
+  const promoCode = useAppSelector((s) => s.cart.promoCode);
+  const addresses = useAppSelector((s) => s.profile.addresses);
+  const defaultAddress = addresses.find((a) => a.isDefault) ?? addresses[0];
+
   const [deliveryTime, setDeliveryTime] = useState("asap");
   const [instructions, setInstructions] = useState("");
+  const [placing, setPlacing] = useState(false);
+  const [orderError, setOrderError] = useState("");
 
-  const total = 32.47;
+  // Compute totals the same way CartScreen does
+  const discount = promoDiscount;
+  const deliveryFee = items.length > 0 ? 2.99 : 0;
+  const serviceFee = subtotal * 0.05;
+  const tip = subtotal * 0.15; // default 15%
+  const tax = (subtotal - discount) * 0.08;
+  const total = subtotal - discount + deliveryFee + serviceFee + tip + tax;
 
-  const handlePlaceOrder = () => {
-    router.push("/order/confirmation" as any);
+  useEffect(() => {
+    // Ensure addresses are loaded when checkout opens
+    if (addresses.length === 0) dispatch(fetchAddresses());
+  }, [dispatch, addresses.length]);
+
+  const handlePlaceOrder = async () => {
+    if (placing) return;
+    if (!defaultAddress) {
+      setOrderError("Please add a delivery address first.");
+      return;
+    }
+    setPlacing(true);
+    setOrderError("");
+    try {
+      const order = await ordersService.create({
+        sellerId: items[0]?.sellerId ?? "",
+        deliveryAddressId: defaultAddress.id,
+        paymentMethodId: "default", // TODO: wire to PaymentMethodsScreen selection
+        items,
+        tip,
+        promoCode: promoCode || undefined,
+        promoDiscount: discount,
+        deliveryInstructions: instructions,
+        idempotencyKey,
+      });
+      dispatch(clearCart());
+      router.replace(`/orders/${order.id}` as any);
+    } catch (e: any) {
+      setOrderError(e.message ?? "Failed to place order. Please try again.");
+    } finally {
+      setPlacing(false);
+    }
   };
 
   return (
@@ -81,12 +140,12 @@ export const CheckoutScreen: React.FC = () => {
             </View>
             <View style={styles.addressInfo}>
               <Text style={[styles.addressLabel, { color: colors.text }]}>
-                Home
+                {defaultAddress?.label ?? "No address"}
               </Text>
-              <Text
-                style={[styles.addressText, { color: colors.textSecondary }]}
-              >
-                123 Main Street, Apt 4B{"\n"}New York, NY 10001
+              <Text style={[styles.addressText, { color: colors.textSecondary }]}>
+                {defaultAddress
+                  ? `${defaultAddress.street}\n${defaultAddress.city}`
+                  : "Add a delivery address to continue"}
               </Text>
             </View>
             <MaterialIcons
@@ -227,84 +286,41 @@ export const CheckoutScreen: React.FC = () => {
             Order Summary
           </Text>
 
-          {/* Items Preview */}
           <View style={styles.itemsPreview}>
-            <View style={styles.itemPreviewRow}>
-              <Text
-                style={[
-                  styles.itemPreviewText,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                2x Signature Whopper
-              </Text>
-            </View>
-            <View style={styles.itemPreviewRow}>
-              <Text
-                style={[
-                  styles.itemPreviewText,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                1x Loaded Cheesy Fries
-              </Text>
-            </View>
-            <View style={styles.itemPreviewRow}>
-              <Text
-                style={[
-                  styles.itemPreviewText,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                1x Strawberry Shake
-              </Text>
-            </View>
+            {items.map((item) => (
+              <View key={item.id} style={styles.itemPreviewRow}>
+                <Text style={[styles.itemPreviewText, { color: colors.textSecondary }]}>
+                  {item.quantity}x {item.name}
+                </Text>
+              </View>
+            ))}
           </View>
 
           <View
             style={[styles.summaryDivider, { backgroundColor: colors.border }]}
           />
 
-          {/* Price Breakdown */}
           <View style={styles.summaryRow}>
-            <Text
-              style={[styles.summaryLabel, { color: colors.textSecondary }]}
-            >
-              Subtotal
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              $24.48
-            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Subtotal</Text>
+            <Text style={[styles.summaryValue, { color: colors.text }]}>${subtotal.toFixed(2)}</Text>
+          </View>
+          {discount > 0 && (
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, { color: "#10b981" }]}>Discount ({promoCode})</Text>
+              <Text style={[styles.summaryValue, { color: "#10b981" }]}>-${discount.toFixed(2)}</Text>
+            </View>
+          )}
+          <View style={styles.summaryRow}>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Delivery Fee</Text>
+            <Text style={[styles.summaryValue, { color: colors.text }]}>${deliveryFee.toFixed(2)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text
-              style={[styles.summaryLabel, { color: colors.textSecondary }]}
-            >
-              Delivery Fee
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              $2.99
-            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Tax</Text>
+            <Text style={[styles.summaryValue, { color: colors.text }]}>${tax.toFixed(2)}</Text>
           </View>
           <View style={styles.summaryRow}>
-            <Text
-              style={[styles.summaryLabel, { color: colors.textSecondary }]}
-            >
-              Tax
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              $2.16
-            </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text
-              style={[styles.summaryLabel, { color: colors.textSecondary }]}
-            >
-              Tip
-            </Text>
-            <Text style={[styles.summaryValue, { color: colors.text }]}>
-              $3.67
-            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Tip (15%)</Text>
+            <Text style={[styles.summaryValue, { color: colors.text }]}>${tip.toFixed(2)}</Text>
           </View>
 
           <View
@@ -331,15 +347,27 @@ export const CheckoutScreen: React.FC = () => {
           { backgroundColor: colors.surface, borderTopColor: colors.border },
         ]}
       >
+        {orderError ? (
+          <Text style={{ color: "#ef4444", fontSize: 13, textAlign: "center", marginBottom: 8 }}>
+            {orderError}
+          </Text>
+        ) : null}
         <TouchableOpacity
           style={[
             styles.placeOrderBtn,
-            { backgroundColor: colors.primary, shadowColor: colors.primary },
+            { backgroundColor: placing ? colors.border : colors.primary, shadowColor: colors.primary },
           ]}
           onPress={handlePlaceOrder}
+          disabled={placing || items.length === 0}
         >
-          <Text style={styles.placeOrderBtnText}>Place Order</Text>
-          <Text style={styles.placeOrderTotal}>${total.toFixed(2)}</Text>
+          {placing ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <>
+              <Text style={styles.placeOrderBtnText}>Place Order</Text>
+              <Text style={styles.placeOrderTotal}>${total.toFixed(2)}</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>

@@ -1,8 +1,11 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { supabase } from "@/src/services/supabase";
+import { updateOrderStatus } from "@/src/store/slices/ordersSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Image,
   ScrollView,
@@ -12,18 +15,67 @@ import {
   View,
 } from "react-native";
 
-const TRACKING_STEPS = [
-  { id: 1, label: "Preparing", completed: true },
-  { id: 2, label: "Picked Up", completed: true },
-  { id: 3, label: "Nearby", completed: true },
-  { id: 4, label: "Arriving", completed: false, active: true },
+const ALL_STEPS = [
+  { id: "confirmed", label: "Confirmed" },
+  { id: "preparing", label: "Preparing" },
+  { id: "picked_up", label: "Picked Up" },
+  { id: "nearby",   label: "Nearby" },
+  { id: "arriving", label: "Arriving" },
+  { id: "delivered",label: "Delivered" },
 ];
 
 export const OrderTrackingScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const activeOrder = useAppSelector((s) => s.orders.activeOrder);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+
+  // Subscribe to Supabase Realtime for order status changes
+  useEffect(() => {
+    if (!activeOrder?.id) return;
+    const channel = supabase
+      .channel(`order-track-${activeOrder.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${activeOrder.id}`,
+        },
+        (payload) => {
+          dispatch(
+            updateOrderStatus({
+              orderId: activeOrder.id,
+              status: payload.new.status,
+            })
+          );
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [activeOrder?.id, dispatch]);
+
+  const currentStatusIndex = useMemo(() => {
+    const idx = ALL_STEPS.findIndex((s) => s.id === activeOrder?.status);
+    return idx >= 0 ? idx : 0;
+  }, [activeOrder?.status]);
+
+  const trackingSteps = ALL_STEPS.map((step, i) => ({
+    ...step,
+    completed: i < currentStatusIndex,
+    active: i === currentStatusIndex,
+  }));
+
+  const etaText = activeOrder?.estimatedDeliveryTime
+    ? `ETA ${new Date(activeOrder.estimatedDeliveryTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Calculating ETA...";
+
+  const statusLabel = activeOrder?.status
+    ? activeOrder.status.replace("_", " ")
+    : "Tracking order";
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -39,7 +91,7 @@ export const OrderTrackingScreen: React.FC = () => {
         </TouchableOpacity>
         <View style={[styles.orderBadge, { backgroundColor: colors.surface }]}>
           <Text style={[styles.orderBadgeText, { color: colors.text }]}>
-            Order #2492
+          Order #{activeOrder?.id?.slice(0, 8).toUpperCase() ?? "------"}
           </Text>
         </View>
         <TouchableOpacity
@@ -96,12 +148,12 @@ export const OrderTrackingScreen: React.FC = () => {
           <View style={styles.statusContainer}>
             <View>
               <Text style={[styles.etaText, { color: colors.text }]}>
-                Arriving in 4 mins
+                {etaText}
               </Text>
               <Text
                 style={[styles.statusText, { color: colors.textSecondary }]}
               >
-                Driver is nearby
+                {statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1)}
               </Text>
             </View>
             <View
@@ -116,7 +168,7 @@ export const OrderTrackingScreen: React.FC = () => {
 
           {/* Progress Stepper */}
           <View style={styles.progressContainer}>
-            {TRACKING_STEPS.map((step, index) => (
+            {trackingSteps.map((step, index) => (
               <View
                 key={step.id}
                 style={[
