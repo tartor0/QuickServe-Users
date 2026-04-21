@@ -1,9 +1,11 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { profileService } from "@/src/services/api/profile";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Switch,
@@ -47,12 +49,21 @@ export const DeleteAccountScreen: React.FC = () => {
   const [confirmText, setConfirmText] = useState("");
   const [understood, setUnderstood] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+
   const canDelete = confirmText.toLowerCase() === "delete" && understood;
 
-  const handleDelete = () => {
-    if (canDelete) {
-      // TODO: Implement actual account deletion
-      router.replace("/auth/onboarding");
+  const handleDelete = async () => {
+    if (!canDelete) return;
+    setLoading(true);
+    setApiError("");
+    try {
+      await profileService.deleteAccount();
+      // _layout.tsx auth listener detects sign-out and redirects to onboarding
+    } catch (e: any) {
+      setApiError(e.message ?? "Failed to delete account. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -230,21 +241,25 @@ export const DeleteAccountScreen: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.deleteBtn,
-            canDelete
+            canDelete && !loading
               ? { backgroundColor: "#ef4444" }
               : { backgroundColor: colors.border },
           ]}
           onPress={handleDelete}
-          disabled={!canDelete}
+          disabled={!canDelete || loading}
         >
-          <Text
-            style={[
-              styles.deleteBtnText,
-              { color: canDelete ? "#fff" : colors.textSecondary },
-            ]}
-          >
-            Delete Account
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text
+              style={[
+                styles.deleteBtnText,
+                { color: canDelete ? "#fff" : colors.textSecondary },
+              ]}
+            >
+              Delete Account
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
