@@ -1,11 +1,15 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { EmptyState } from "@/src/components/common/EmptyState";
+import { fetchOrders, fetchActiveOrder } from "@/src/store/slices/ordersSlice";
+import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
@@ -15,52 +19,40 @@ import {
 
 const FILTER_OPTIONS = ["All", "Delivered", "Cancelled"];
 
-const ORDERS = [
-  {
-    id: "1",
-    seller: "Burger King • Central Park",
-    status: "Delivered",
-    statusColor: "#10b981",
-    date: "Oct 24, 2023",
-    total: "$24.50",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200",
-  },
-  {
-    id: "2",
-    seller: "Pizza Hut • Downtown",
-    status: "Cancelled",
-    statusColor: "#ef4444",
-    date: "Oct 20, 2023",
-    total: "$38.00",
-    image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200",
-  },
-  {
-    id: "3",
-    seller: "Sushi Palace • Midtown",
-    status: "Delivered",
-    statusColor: "#10b981",
-    date: "Oct 18, 2023",
-    total: "$45.99",
-    image: "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=200",
-  },
-];
+const STATUS_COLORS: Record<string, string> = {
+  delivered: "#10b981",
+  cancelled: "#ef4444",
+  pending: "#f59e0b",
+  confirmed: "#3b82f6",
+  preparing: "#8b5cf6",
+  picked_up: "#3b82f6",
+  nearby: "#3b82f6",
+  arriving: "#3b82f6",
+};
 
-const ACTIVE_ORDERS = [
-  {
-    id: "2492",
-    seller: "Burger King • Central Park",
-    status: "Arriving",
-    statusColor: "#3b82f6",
-    eta: "4 mins",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200",
-  },
-];
+const ACTIVE_STATUSES = ["pending", "confirmed", "preparing", "picked_up", "nearby", "arriving"];
 
 export const OrdersScreen: React.FC = () => {
   const colorScheme = useColorScheme() ?? "light";
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { orders, activeOrder, loading } = useAppSelector((s) => s.orders);
   const [selectedFilter, setSelectedFilter] = useState("All");
+
+  const load = useCallback(() => {
+    dispatch(fetchOrders());
+    dispatch(fetchActiveOrder());
+  }, [dispatch]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const pastOrders = orders.filter((o) => !ACTIVE_STATUSES.includes(o.status));
+
+  const filteredPastOrders = pastOrders.filter((o) => {
+    if (selectedFilter === "All") return true;
+    return o.status === selectedFilter.toLowerCase();
+  });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

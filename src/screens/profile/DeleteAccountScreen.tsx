@@ -221,6 +221,12 @@ export const DeleteAccountScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Footer */}
+      {apiError ? (
+        <View style={styles.errorBanner}>
+          <MaterialIcons name="error-outline" size={16} color="#ef4444" />
+          <Text style={styles.errorBannerText}>{apiError}</Text>
+        </View>
+      ) : null}
       <View
         style={[
           styles.footer,
@@ -448,5 +454,21 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     fontSize: 16,
     fontWeight: "700",
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "rgba(239,68,68,0.08)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(239,68,68,0.2)",
+  },
+  errorBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#ef4444",
+    lineHeight: 18,
   },
 });

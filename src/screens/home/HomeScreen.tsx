@@ -1,22 +1,24 @@
 import { Colors } from "@/constants/theme";
 import { Skeleton } from "@/src/components/common/Skeleton";
 import { useTheme } from "@/src/context/ThemeContext";
+import { sellersService } from "@/src/services/api/sellers";
+import type { Seller } from "@/src/services/api/sellers";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-    Dimensions,
     Image,
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    useWindowDimensions,
     View,
 } from "react-native";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
+// BANNERS stay static — these are marketing content, not DB data
 const BANNERS = [
   {
     id: "b1",
@@ -42,68 +44,40 @@ const CATEGORIES = [
   { id: "supplies", label: "Supplies", icon: "inventory-2" },
 ];
 
-const SELLERS = [
-  {
-    id: "1",
-    name: "Gourmet Burgers",
-    category: "American • Fast Food",
-    rating: 4.5,
-    distance: "1.2 km",
-    deliveryTime: "25-35 min",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-    discount: "20% OFF",
-  },
-  {
-    id: "2",
-    name: "Health First Pharmacy",
-    category: "Health • Medicine",
-    rating: 4.8,
-    distance: "0.5 km",
-    deliveryTime: "10-20 min",
-    image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=400",
-  },
-  {
-    id: "3",
-    name: "Organic Harvest",
-    category: "Grocery • Organic",
-    rating: 4.2,
-    distance: "2.0 km",
-    deliveryTime: "30-45 min",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400",
-  },
-];
-
-const RECENTLY_ORDERED = [
-  {
-    id: "1",
-    name: "Burger King",
-    image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-  },
-  {
-    id: "2",
-    name: "Health First Pharmacy",
-    image: "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=400",
-  },
-  {
-    id: "3",
-    name: "Organic Harvest",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400",
-  },
-];
-
 export const HomeScreen: React.FC = () => {
   const { colorScheme } = useTheme();
   const colors = Colors[colorScheme];
   const router = useRouter();
+  const { width: SCREEN_WIDTH } = useWindowDimensions(); // fixes stale width on orientation change
+
+  const [sellers, setSellers] = useState<Seller[]>([]);
+  const [featuredSellers, setFeaturedSellers] = useState<Seller[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState("");
+
+  const loadSellers = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setIsRefreshing(true);
+    else setIsLoading(true);
+    setFetchError("");
+    try {
+      const [all, featured] = await Promise.all([
+        sellersService.list(),
+        sellersService.getFeatured(),
+      ]);
+      setSellers(all);
+      setFeaturedSellers(featured);
+    } catch (e: any) {
+      setFetchError(e.message ?? "Failed to load sellers.");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    // Simulate initial data fetch
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    loadSellers();
+  }, [loadSellers]);
 
   const renderSkeleton = () => (
     <View style={styles.skeletonContainer}>
